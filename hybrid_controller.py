@@ -29,6 +29,16 @@ speed_controller = PID(Kp=1.0,
                        )
 
 
+def check_processing_time(start_time, time_list):
+    """
+    this for check the one frame processing time,
+    not for the fps of communication with gym env
+    """
+    end_time = time.time()
+    processing_time = end_time - start_time
+    time_list.append(processing_time)
+
+
 def simulate(args):
     algo = args.algo
     folder = args.folder
@@ -82,7 +92,9 @@ def simulate(args):
     num_vae_sac = 0
     running_reward = 0.0
     ep_len = 0
+    processing_times = []
     for _ in range(args.n_timesteps):
+        start_time = time.time()
         is_okay, angle_error = detector.detect_lane(raw_obs)
         angle_error = -angle_error
         if detector.left and detector.right:
@@ -92,6 +104,9 @@ def simulate(args):
             reduction = speed_controller(steer)
             speed = base_speed - np.abs(reduction)
             action = [[steer, speed]]
+
+            check_processing_time(start_time, processing_times)
+
             obs, reward, done, infos = env.step(action)
         else:
             # VAE-SAC agent
@@ -101,6 +116,9 @@ def simulate(args):
             if isinstance(env.action_space, gym.spaces.Box):
                 action = np.clip(action, env.action_space.low,
                                  env.action_space.high)
+
+            check_processing_time(start_time, processing_times)
+
             obs, reward, done, infos = env.step(action)
 
         raw_obs = infos[0]['raw_obs']
@@ -122,6 +140,8 @@ def simulate(args):
             ep_len = 0
             print("Default:", num_default, "/ VAE-SAC:", num_vae_sac,
                   "/ Default ratio: {:.2f}".format(num_default / (num_default+num_vae_sac)))
+            print("One frame processing time mean (ms): ",
+                  1000 * np.mean(processing_times))
 
     env.reset()
     env.envs[0].env.exit_scene()

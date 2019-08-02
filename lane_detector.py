@@ -66,7 +66,7 @@ class LaneDetector:
         dx_bottom = int(0 * xsize)
         dx_up = int(0 * xsize)
         dy_bottom = int(0 * ysize)
-        dy_up = int(0.55 * ysize)
+        dy_up = int(0.4 * ysize)
         vertices = np.array([[(xsize - dx_bottom, ysize - dy_bottom),
                               (xsize - dx_up, dy_up),
                               (dx_up, dy_up),

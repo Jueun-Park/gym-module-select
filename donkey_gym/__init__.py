@@ -5,6 +5,11 @@ register(
     entry_point='donkey_gym.vae_env.vae_env:DonkeyVAEEnv',
     max_episode_steps=None,
 )
+
+register(
+    id='ModuleSelect-v0',
+    entry_porint='donkey_gym.module_select_env:ModuleSelectEnv',
+)
 #
 # register(
 #     id='donkey-generated-roads-v0',

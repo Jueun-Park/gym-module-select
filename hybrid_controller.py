@@ -14,7 +14,7 @@ from utils.utils import ALGOS, create_test_env, get_latest_run_id, get_saved_hyp
 
 import cv2
 from simple_pid import PID
-from lane_detector import LaneDetector
+from modules.lane_detector import LaneDetector
 
 steer_controller = PID(Kp=2.88,
                        Ki=0.0,
@@ -40,7 +40,7 @@ def check_processing_time(start_time, time_list):
 
 
 def simulate(args):
-    algo = args.algo
+    algo = "sac"
     folder = args.folder
 
     if args.exp_id == 0:
@@ -155,8 +155,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--folder', help='Log folder',
                         type=str, default='logs')
-    parser.add_argument('--algo', help='RL Algorithm', default='sac',
-                        type=str, required=False, choices=list(ALGOS.keys()))
     parser.add_argument('-n', '--n-timesteps', help='number of timesteps', default=1000,
                         type=int)
     parser.add_argument('--exp-id', help='Experiment ID (-1: no exp folder, 0: latest)', default=0,

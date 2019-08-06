@@ -4,7 +4,7 @@ from gym.utils import seeding
 
 
 class ModuleSelectEnv(gym.Env):
-    metadate = {'render.modes': ['human']}
+    metadata = {'render.modes': ['human']}
 
     def __init__(self):
         pass

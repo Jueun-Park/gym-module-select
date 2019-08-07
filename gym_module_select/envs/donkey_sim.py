@@ -12,8 +12,8 @@ from PIL import Image
 
 from config import INPUT_DIM, ROI, THROTTLE_REWARD_WEIGHT, MAX_THROTTLE, MIN_THROTTLE, \
     REWARD_CRASH, CRASH_SPEED_WEIGHT
-from donkey_gym.core.fps import FPSTimer
-from donkey_gym.core.tcp_server import IMesgHandler, SimServer
+from gym_module_select.core.fps import FPSTimer
+from gym_module_select.core.tcp_server import IMesgHandler, SimServer
 
 
 class DonkeyUnitySimContoller:

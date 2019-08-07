@@ -18,7 +18,7 @@ from stable_baselines.sac.policies import FeedForwardPolicy as SACPolicy
 from stable_baselines.ddpg.policies import FeedForwardPolicy as DDPGPolicy
 
 from algos import DDPG, SAC, PPO2
-from donkey_gym.envs.vae_env import DonkeyVAEEnv
+from gym_module_select.envs.vae_env import DonkeyVAEEnv
 from vae.controller import VAEController
 from config import MIN_THROTTLE, MAX_THROTTLE, MAX_CTE_ERROR, LEVEL, FRAME_SKIP, \
     N_COMMAND_HISTORY, TEST_FRAME_SKIP

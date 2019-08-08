@@ -59,11 +59,13 @@ class ModuleSelectEnv(gym.Env):
             action = softmax(action)
             action = int(np.random.choice(2, 1, p=action))
 
+        # TODO: do I have to include the time which took when getting the image in processing time?
+        self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()
+        
         start_time = time.time()
         if action == 0:
             # default line tracer
             self.num_default += 1
-            self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()
             _, angle_error = self.detector.detect_lane(self.raw_obs)
             angle_error = -angle_error
             steer = steer_controller(angle_error)

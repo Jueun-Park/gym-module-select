@@ -40,9 +40,6 @@ class ModuleSelectEnv(gym.Env):
             stats_path=stats_path, seed=0, log_dir="logs", hyperparams=hyperparams)
 
         self.detector = LaneDetector()
-        # TODO: wanna get original image of first frame
-        # self.raw_obs = np.ones((80, 160, 3), dtype=np.uint8)
-        # self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()
 
         algo = "sac"
         model_path = "logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0.pkl"
@@ -87,7 +84,6 @@ class ModuleSelectEnv(gym.Env):
             if isinstance(self.inner_env.action_space, gym.spaces.Box):
                 inner_action = np.clip(inner_action, self.inner_env.action_space.low,
                                        self.inner_env.action_space.high)
-            print(inner_action)
             check_processing_time(start_time, self.processing_times)
             
             self.inner_obs, reward, done, infos = self.inner_env.step(
@@ -108,7 +104,6 @@ class ModuleSelectEnv(gym.Env):
 
     def reset(self):
         self.inner_obs = self.inner_env.reset()
-        # self.raw_obs = np.ones((80, 160, 3), dtype=np.uint8)  # TODO
         self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()
         self.detector.detect_lane(self.raw_obs)
         if self.verbose == 1:

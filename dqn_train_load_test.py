@@ -12,6 +12,7 @@ model = DQN(
     verbose=1,
 )
 
+print("> start train test")
 model.learn(total_timesteps=1000)
 
 env.close()
@@ -22,8 +23,10 @@ del model
 model = DQN.load("test_dqn_model.pkl")
 
 obs = env.reset()
+print("> start load test")
 for i in range(1000):
     action, _states = model.predict(obs)
     obs, rewards, dones, info = env.step(action)
     env.render()
+env.reset()
 env.close()

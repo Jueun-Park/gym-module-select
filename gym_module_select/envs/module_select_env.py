@@ -57,6 +57,8 @@ class ModuleSelectEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=255, shape=self.raw_obs.shape)
 
         self.processing_times = []
+        self.num_default = 0
+        self.num_vae_sac = 0
 
     def step(self, action):
         if self.continuous:
@@ -66,6 +68,7 @@ class ModuleSelectEnv(gym.Env):
         start_time = time.time()
         if action == 0:
             # default line tracer
+            self.num_default += 1
             _, angle_error = self.detector.detect_lane(self.raw_obs)
             angle_error = -angle_error
             steer = steer_controller(angle_error)
@@ -77,6 +80,7 @@ class ModuleSelectEnv(gym.Env):
                 inner_action)
         elif action == 1:
             # VAE-SAC agent
+            self.num_vae_sac += 1
             inner_action, _ = self.model.predict(
                 self.inner_obs, deterministic=False)
             # Clip Action to avoid out of bound errors
@@ -103,6 +107,9 @@ class ModuleSelectEnv(gym.Env):
     def reset(self):
         self.inner_obs = self.inner_env.reset()
         self.raw_obs = np.ones((80, 160, 3), dtype=np.uint8)  # TODO
+        self._print_counting_log()
+        self.num_default = 0
+        self.num_vae_sac = 0
 
         return self.raw_obs
 
@@ -114,6 +121,15 @@ class ModuleSelectEnv(gym.Env):
         self.inner_env.envs[0].env.exit_scene()
         time.sleep(0.5)
         cv2.destroyAllWindows()
+
+    def _print_counting_log(self):
+        try:
+            print("Default:", self.num_default, "/ VAE-SAC:", self.num_vae_sac,
+                "/ Default ratio: {:.2f}".format(self.num_default / (self.num_default+self.num_vae_sac)))
+            print("One frame processing time mean (ms): ",
+                1000 * np.mean(self.processing_times))
+        except ZeroDivisionError:
+            pass
 
 
 class ModuleSelectEnvContinuous(ModuleSelectEnv):

@@ -81,7 +81,7 @@ def simulate(args):
     detector = LaneDetector()
 
     obs = env.reset()
-    raw_obs = np.ones((80, 160, 3), dtype=np.uint8)
+    raw_obs, _, _, _ = env.envs[0].env.viewer.observe()    
 
     # Force deterministic for SAC and DDPG
     deterministic = args.deterministic or algo in ['ddpg', 'sac']
@@ -121,7 +121,7 @@ def simulate(args):
 
             obs, reward, done, infos = env.step(action)
 
-        raw_obs = infos[0]['raw_obs']
+        raw_obs, _, _, _ = env.envs[0].env.viewer.observe()
         cv2.imshow('input', detector.original_image_array)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

@@ -98,7 +98,8 @@ class ModuleSelectEnv(gym.Env):
             pass
 
         # TODO: ?
-        reward[0] -= self.processing_times[-1] * 1000  # (ms)
+        reward[0] -= self.processing_times[-1] * 10  # centisecond (0.01 sec)
+        print(reward)
         self.running_reward += reward[0]
         self.ep_len += 1
 

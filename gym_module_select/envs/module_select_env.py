@@ -97,9 +97,7 @@ class ModuleSelectEnv(gym.Env):
         if cv2.waitKey(1) & 0xFF == ord('q'):
             pass
 
-        # TODO: ?
         reward[0] -= self.processing_times[-1] * 10  # centisecond (0.01 sec)
-        print(reward)
         self.running_reward += reward[0]
         self.ep_len += 1
 

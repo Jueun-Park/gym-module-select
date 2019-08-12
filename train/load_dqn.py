@@ -6,7 +6,7 @@ import os
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import DQN
 
-model_name = "/dqn-models/dqn-model_4000.pkl"
+model_name = "/dqn-models-2/dqn-model_4000.pkl"
 
 env = gym.make('ModuleSelect-v0')
 env = DummyVecEnv([lambda: env])
@@ -18,3 +18,5 @@ for i in range(1000):
     action, _states = model.predict(obs)
     obs, rewards, dones, info = env.step(action)
     env.render()
+
+env.close()

@@ -5,7 +5,7 @@ import sys
 sys.path.append('.')
 import gym_module_select
 from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines.deepq.policies import MlpPolicy
+from stable_baselines.deepq.policies import CnnPolicy
 from stable_baselines.bench import Monitor
 from stable_baselines.results_plotter import load_results, ts2xy
 from stable_baselines import DQN
@@ -14,8 +14,8 @@ TIMESTEPS = 10000001
 
 best_mean_reward = -numpy.inf
 n_steps = 0
-log_directory = os.path.dirname(os.path.realpath(__file__)) + "/dqn-log/"
-model_directory = os.path.dirname(os.path.realpath(__file__)) + "/dqn-models/"
+log_directory = os.path.dirname(os.path.realpath(__file__)) + "/dqn-log-2/"
+model_directory = os.path.dirname(os.path.realpath(__file__)) + "/dqn-models-2/"
 
 
 def callback(_locals, _globals):
@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     model = DQN(
         env=env,
-        policy=MlpPolicy,
+        policy=CnnPolicy,
         verbose=1,
         # tensorboard_log="./dqn_tensorboard/",
     )

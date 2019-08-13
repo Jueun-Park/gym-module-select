@@ -66,11 +66,16 @@ class ModuleSelectEnv(gym.Env):
         if action == 0:
             # default line tracer
             self.num_default += 1
-            _, angle_error = self.detector.detect_lane(self.raw_obs)
-            angle_error = -angle_error
-            steer = steer_controller(angle_error)
-            reduction = speed_controller(steer)
-            speed = base_speed - np.abs(reduction)
+            is_done, angle_error = self.detector.detect_lane(self.raw_obs)
+            if is_done:
+                angle_error = -angle_error
+                steer = steer_controller(angle_error)
+                reduction = speed_controller(steer)
+                speed = base_speed - np.abs(reduction)
+            else:
+                angle_error = 0
+                steer = steer_controller(angle_error)
+                speed = base_speed
             inner_action = [[steer, speed]]
 
             check_processing_time(start_time, self.processing_times)
@@ -97,7 +102,7 @@ class ModuleSelectEnv(gym.Env):
         if cv2.waitKey(1) & 0xFF == ord('q'):
             pass
 
-        reward[0] -= self.processing_times[-1] * 10  # centisecond (0.01 sec)
+        reward[0] -= self.processing_times[-1] * 3  # TODO
         self.running_reward += reward[0]
         self.ep_len += 1
 

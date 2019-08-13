@@ -37,6 +37,7 @@ class LaneDetector:
 
         add_term = 0.1  # TODO: consider previous angles
         if not self.right or not self.left:
+            self.done = False
             self.angle = np.mean(self.previous_angles)
             if not self.right:
                 self.angle += add_term
@@ -162,7 +163,10 @@ class LaneDetector:
         # < 0 when the car have to go left
         dist_to_baseline = self.intersection_point[0] - xsize/2
         dist_to_bottom = ysize - self.intersection_point[1]
-        self.angle = np.arctan(dist_to_baseline / dist_to_bottom)
+        try:
+            self.angle = np.arctan(dist_to_baseline / dist_to_bottom)
+        except:
+            self.angle = np.inf
         cv2.line(self.original_image_array, (int(xsize/2), 0),
                  (int(xsize/2), ysize), RED, 1)
 

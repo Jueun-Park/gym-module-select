@@ -4,13 +4,13 @@ sys.path.append('.')
 import gym_module_select
 import os
 from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines import DQN
+from stable_baselines import SAC
 
-model_name = "/dqn-models/dqn-model_5000.pkl"
+model_name = "/sac-models/sac-model_1000.pkl"
 
-env = gym.make('ModuleSelect-v0')
+env = gym.make('ModuleSelectContinuous-v0')
 env = DummyVecEnv([lambda: env])
-model = DQN.load(os.path.dirname(
+model = SAC.load(os.path.dirname(
     os.path.realpath(__file__)) + model_name)
 
 obs = env.reset()

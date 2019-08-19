@@ -5,17 +5,17 @@ import sys
 sys.path.append('.')
 import gym_module_select
 from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines.deepq.policies import LnCnnPolicy
+from stable_baselines.sac.policies import LnCnnPolicy
 from stable_baselines.bench import Monitor
 from stable_baselines.results_plotter import load_results, ts2xy
-from stable_baselines import DQN
+from stable_baselines import SAC
 
 TIMESTEPS = 10000001
 
 best_mean_reward = -numpy.inf
 n_steps = 0
-log_directory = os.path.dirname(os.path.realpath(__file__)) + "/dqn-log/"
-model_directory = os.path.dirname(os.path.realpath(__file__)) + "/dqn-models/"
+log_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-log/"
+model_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-models/"
 
 
 def callback(_locals, _globals):
@@ -37,7 +37,7 @@ def callback(_locals, _globals):
             best_mean_reward = mean_reward
             print("Saving new best model")
             _locals['self'].save(
-                model_directory + 'dqn-model_' + str(n_steps + 1) + '.pkl')
+                model_directory + 'sac-model_' + str(n_steps + 1) + '.pkl')
     n_steps += 1
     return True
 
@@ -46,15 +46,15 @@ if __name__ == "__main__":
     os.makedirs(log_directory, exist_ok=True)
     os.makedirs(model_directory, exist_ok=True)
 
-    env = gym.make('ModuleSelect-v0')
+    env = gym.make('ModuleSelectContinuous-v0')
     env = Monitor(env, log_directory, allow_early_resets=True)
     env = DummyVecEnv([lambda: env])
 
-    model = DQN(
+    model = SAC(
         env=env,
         policy=LnCnnPolicy,
         verbose=1,
-        # tensorboard_log="./dqn_tensorboard/",
+        tensorboard_log="./sac_tensorboard/",
     )
 
     model.learn(

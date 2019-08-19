@@ -5,7 +5,7 @@ import sys
 sys.path.append('.')
 import gym_module_select
 from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines.deepq.policies import LnCnnPolicy
+from stable_baselines.deepq.policies import MlpPolicy
 from stable_baselines.bench import Monitor
 from stable_baselines.results_plotter import load_results, ts2xy
 from stable_baselines import DQN
@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     model = DQN(
         env=env,
-        policy=LnCnnPolicy,
+        policy=MlpPolicy,
         verbose=1,
         # tensorboard_log="./dqn_tensorboard/",
     )

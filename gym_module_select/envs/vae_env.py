@@ -236,7 +236,9 @@ class DonkeyVAEEnv(gym.Env):
         if self.vae is None:
             return observation, reward, done, info
         # Encode the image
-        return self.vae.encode(observation), reward, done, info
+        encoded_obs = self.vae.encode(observation)
+        info['encoded_obs'] = encoded_obs
+        return encoded_obs, reward, done, info
 
     def close(self):
         if self.unity_process is not None:

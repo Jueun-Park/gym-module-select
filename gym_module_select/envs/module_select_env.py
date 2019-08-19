@@ -54,7 +54,10 @@ class ModuleSelectEnv(gym.Env):
             # lane detection, end-to-end
             self.action_space = spaces.Discrete(2)
         
-        self.observation_space = spaces.Box(low=0, high=255, shape=(80, 160, 3))
+        self.observation_space = spaces.Box(low=np.finfo(np.float32).min,
+                                            high=np.finfo(np.float32).max,
+                                            shape=(1, self.inner_env.envs[0].env.z_size),
+                                            dtype=np.float32)
 
     def step(self, action):
         step_start_time = time.time()
@@ -109,11 +112,12 @@ class ModuleSelectEnv(gym.Env):
         self.running_reward += reward[0]
         self.ep_len += 1
         check_processing_time(step_start_time, self.step_times)
-        return self.raw_obs, reward[0], done, infos[0]
+        return infos[0]['encoded_obs'], reward[0], done, infos[0]
 
     def reset(self):
         self.inner_obs = self.inner_env.reset()
         self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()
+        self._, _, _, infos = self.inner_env.envs[0].env.observe()
         self.detector.detect_lane(self.raw_obs)
         if self.verbose == 1:
             self._print_counting_log()
@@ -123,8 +127,7 @@ class ModuleSelectEnv(gym.Env):
         self.num_default = 0
         self.num_vae_sac = 0
         self.step_times = []
-
-        return self.raw_obs
+        return infos['encoded_obs']
 
     def render(self, mode='human', close=False):
         result = self.inner_env.render(mode=mode)

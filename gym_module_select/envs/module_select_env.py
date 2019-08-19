@@ -24,6 +24,8 @@ speed_controller = PID(Kp=1.0,
                        output_limits=(-1, 1),
                        )
 
+K = 1
+
 
 class ModuleSelectEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -55,6 +57,7 @@ class ModuleSelectEnv(gym.Env):
         self.observation_space = spaces.Box(low=0, high=255, shape=(80, 160, 3))
 
     def step(self, action):
+        step_start_time = time.time()
         if self.continuous:
             action = softmax(action)
             action = int(np.random.choice(2, 1, p=action))
@@ -102,10 +105,10 @@ class ModuleSelectEnv(gym.Env):
         if cv2.waitKey(1) & 0xFF == ord('q'):
             pass
 
-        reward[0] -= self.processing_times[-1] * 3  # TODO
+        reward[0] -= np.log(self.processing_times[-1]*100 + 1) * K  # TODO
         self.running_reward += reward[0]
         self.ep_len += 1
-
+        check_processing_time(step_start_time, self.step_times)
         return self.raw_obs, reward[0], done, infos[0]
 
     def reset(self):
@@ -119,6 +122,7 @@ class ModuleSelectEnv(gym.Env):
         self.processing_times = []
         self.num_default = 0
         self.num_vae_sac = 0
+        self.step_times = []
 
         return self.raw_obs
 
@@ -137,8 +141,10 @@ class ModuleSelectEnv(gym.Env):
             print("Episode Length", self.ep_len)
             print("Default:", self.num_default, "/ VAE-SAC:", self.num_vae_sac,
                 "/ Default ratio: {:.2f}".format(self.num_default / (self.num_default+self.num_vae_sac)))
-            print("One frame processing time mean (ms): ",
-                1000 * np.mean(self.processing_times))
+            print("One frame processing time mean (ms): {:.2f}".format(
+                1000 * np.mean(self.processing_times)))
+            print("Step time mean (ms): {:.2f}".format(1000 * np.mean(self.step_times)))
+            print("Step per second: {:.2f}".format(1 / np.mean(self.step_times)))
         except ZeroDivisionError:
             pass
         except AttributeError:

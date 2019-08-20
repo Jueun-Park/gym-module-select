@@ -24,7 +24,7 @@ speed_controller = PID(Kp=1.0,
                        output_limits=(-1, 1),
                        )
 
-K = 1
+K = 0.5
 
 
 class ModuleSelectEnv(gym.Env):
@@ -73,7 +73,8 @@ class ModuleSelectEnv(gym.Env):
             # default line tracer
             self.num_default += 1
             is_done, angle_error = self.detector.detect_lane(self.raw_obs)
-            if is_done:
+            EMERGENCY_MODE = True
+            if is_done or EMERGENCY_MODE:
                 angle_error = -angle_error
                 steer = steer_controller(angle_error)
                 reduction = speed_controller(steer)
@@ -108,7 +109,9 @@ class ModuleSelectEnv(gym.Env):
         if cv2.waitKey(1) & 0xFF == ord('q'):
             pass
 
-        reward[0] -= np.log(self.processing_times[-1]*100 + 1) * K  # TODO
+        time_penalty = np.log(self.processing_times[-1]*50 + 1) * K   # TODO
+        reward[0] -= time_penalty
+        # print(reward, self.processing_times[-1], time_penalty)
         self.running_reward += reward[0]
         self.ep_len += 1
         check_processing_time(step_start_time, self.step_times)

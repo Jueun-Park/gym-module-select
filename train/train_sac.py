@@ -5,7 +5,7 @@ import sys
 sys.path.append('.')
 import gym_module_select
 from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines.sac.policies import LnCnnPolicy
+from stable_baselines.sac.policies import MlpPolicy
 from stable_baselines.bench import Monitor
 from stable_baselines.results_plotter import load_results, ts2xy
 from stable_baselines import SAC
@@ -14,8 +14,8 @@ TIMESTEPS = 10000001
 
 best_mean_reward = -numpy.inf
 n_steps = 0
-log_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-log/"
-model_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-models/"
+log_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-log-dl-2/"
+model_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-models-dl-2/"
 
 
 def callback(_locals, _globals):
@@ -25,7 +25,7 @@ def callback(_locals, _globals):
     :param _globals: (dict)
     """
     global best_mean_reward, n_steps
-    if (n_steps + 1) % 1000 == 0:
+    if (n_steps + 1) % 100 == 0:
         x, y = ts2xy(load_results(log_directory), 'timesteps')
         if len(x) > 0:
             mean_reward = numpy.mean(y[-100:])
@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     model = SAC(
         env=env,
-        policy=LnCnnPolicy,
+        policy=MlpPolicy,
         verbose=1,
         tensorboard_log="./sac_tensorboard/",
     )

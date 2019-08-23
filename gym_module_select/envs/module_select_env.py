@@ -24,7 +24,9 @@ speed_controller = PID(Kp=1.0,
                        output_limits=(-1, 1),
                        )
 
-K = 0.5
+PENALTY_WEIGHT = 0.5
+CONTROLS_PER_ACTION = 10
+EMERGENCY_MODE = False
 
 
 class ModuleSelectEnv(gym.Env):
@@ -60,62 +62,67 @@ class ModuleSelectEnv(gym.Env):
                                             dtype=np.float32)
 
     def step(self, action):
-        step_start_time = time.time()
+        reward_sum = 0
         if self.continuous:
             action = softmax(action)
             action = int(np.random.choice(2, 1, p=action))
+        for i in range(CONTROLS_PER_ACTION):
+            step_start_time = time.time()
 
-        # TODO: do I have to include the time which took when getting the image in processing time?
-        self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()
-        
-        start_time = time.time()
-        if action == 0:
-            # default line tracer
-            self.num_default += 1
-            is_done, angle_error = self.detector.detect_lane(self.raw_obs)
-            EMERGENCY_MODE = True
-            if is_done or EMERGENCY_MODE:
-                angle_error = -angle_error
-                steer = steer_controller(angle_error)
-                reduction = speed_controller(steer)
-                speed = base_speed - np.abs(reduction)
-            else:
-                angle_error = 0
-                steer = steer_controller(angle_error)
-                speed = base_speed
-            inner_action = [[steer, speed]]
-
-            check_processing_time(start_time, self.processing_times)
-
-            self.inner_obs, reward, done, infos = self.inner_env.step(
-                inner_action)
-        elif action == 1:
-            # VAE-SAC agent
-            self.num_vae_sac += 1
-            inner_action, _ = self.model.predict(
-                self.inner_obs, deterministic=True)
-            # Clip Action to avoid out of bound errors
-            if isinstance(self.inner_env.action_space, gym.spaces.Box):
-                inner_action = np.clip(inner_action, self.inner_env.action_space.low,
-                                       self.inner_env.action_space.high)
-            check_processing_time(start_time, self.processing_times)
+            # TODO: do I have to include the time which took when getting the image in processing time?
+            self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()
             
-            self.inner_obs, reward, done, infos = self.inner_env.step(
-                inner_action)
-        else:
-            print("action error")
+            start_time = time.time()
+            if action == 0:
+                # default line tracer
+                self.num_default += 1
+                is_done, angle_error = self.detector.detect_lane(self.raw_obs)
+                if is_done or EMERGENCY_MODE:
+                    angle_error = -angle_error
+                    steer = steer_controller(angle_error)
+                    reduction = speed_controller(steer)
+                    speed = base_speed - np.abs(reduction)
+                else:
+                    angle_error = 0
+                    steer = steer_controller(angle_error)
+                    speed = base_speed
+                inner_action = [[steer, speed]]
 
-        cv2.imshow('input', self.detector.original_image_array)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            pass
+                check_processing_time(start_time, self.processing_times)
 
-        time_penalty = np.log(self.processing_times[-1]*50 + 1) * K   # TODO
-        reward[0] -= time_penalty
-        # print(reward, self.processing_times[-1], time_penalty)
-        self.running_reward += reward[0]
-        self.ep_len += 1
-        check_processing_time(step_start_time, self.step_times)
-        return infos[0]['encoded_obs'], reward[0], done, infos[0]
+                self.inner_obs, reward, done, infos = self.inner_env.step(
+                    inner_action)
+            elif action == 1:
+                # VAE-SAC agent
+                self.num_vae_sac += 1
+                inner_action, _ = self.model.predict(
+                    self.inner_obs, deterministic=True)
+                # Clip Action to avoid out of bound errors
+                if isinstance(self.inner_env.action_space, gym.spaces.Box):
+                    inner_action = np.clip(inner_action, self.inner_env.action_space.low,
+                                        self.inner_env.action_space.high)
+                check_processing_time(start_time, self.processing_times)
+                
+                self.inner_obs, reward, done, infos = self.inner_env.step(
+                    inner_action)
+            else:
+                print("action error")
+
+            cv2.imshow('input', self.detector.original_image_array)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                pass
+
+            time_penalty = np.log(self.processing_times[-1]*50 + 1) * PENALTY_WEIGHT   # TODO
+            reward_sum += reward[0]
+            reward_sum -= time_penalty
+            # print(reward, self.processing_times[-1], time_penalty)
+            self.ep_len += 1
+            check_processing_time(step_start_time, self.step_times)
+            if done:
+                break
+            
+        self.running_reward += reward_sum
+        return infos[0]['encoded_obs'], reward_sum, done, infos[0]
 
     def reset(self):
         self.inner_obs = self.inner_env.reset()
@@ -150,7 +157,7 @@ class ModuleSelectEnv(gym.Env):
             print("One frame processing time mean (ms): {:.2f}".format(
                 1000 * np.mean(self.processing_times)))
             print("Step time mean (ms): {:.2f}".format(1000 * np.mean(self.step_times)))
-            print("Step per second: {:.2f}".format(1 / np.mean(self.step_times)))
+            print("Steps per second: {:.2f}".format(1 / np.mean(self.step_times)))
         except ZeroDivisionError:
             pass
         except AttributeError:

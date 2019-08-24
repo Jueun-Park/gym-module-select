@@ -41,7 +41,7 @@ class ModuleSelectEnv(gym.Env):
             import os
             import csv
             directory_names = ["lane-tracker", "end-to-end", "sequence-model", "orc-model"]
-            simulate_num = 1
+            simulate_num = 2
             timestr = time.strftime("%Y%m%d-%H%M%S")
             root_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
             root_dir = os.path.abspath(os.path.join(root_dir, ".."))
@@ -56,8 +56,8 @@ class ModuleSelectEnv(gym.Env):
                                       "episode length",
                                       "lane tracker usage ratio",
                                       "one frame processing time mean (ms)",
-                                      "step time mean (ms)",
-                                      "steps per second",
+                                      "one control time mean (ms)",
+                                      "controls per second",
                                       "EM mode " + str(EMERGENCY_MODE),
                                       "Controls per action " + str(CONTROLS_PER_ACTION),
                                       ])
@@ -99,26 +99,22 @@ class ModuleSelectEnv(gym.Env):
             self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()
             
             start_time = time.time()
-            if action == 0:
-                # default line tracer
+            # default line tracer
+            is_done, angle_error = self.detector.detect_lane(self.raw_obs)
+            if self.detector.left and self.detector.right:
                 self.num_default += 1
-                is_done, angle_error = self.detector.detect_lane(self.raw_obs)
-                if is_done or EMERGENCY_MODE:
-                    angle_error = -angle_error
-                    steer = steer_controller(angle_error)
-                    reduction = speed_controller(steer)
-                    speed = base_speed - np.abs(reduction)
-                else:
-                    angle_error = 0
-                    steer = steer_controller(angle_error)
-                    speed = base_speed
+                angle_error = -angle_error
+                steer = steer_controller(angle_error)
+                reduction = speed_controller(steer)
+                speed = base_speed - np.abs(reduction)
+            
                 inner_action = [[steer, speed]]
 
                 check_processing_time(start_time, self.processing_times)
 
                 self.inner_obs, reward, done, infos = self.inner_env.step(
                     inner_action)
-            elif action == 1:
+            else:
                 # VAE-SAC agent
                 self.num_vae_sac += 1
                 inner_action, _ = self.model.predict(
@@ -131,8 +127,6 @@ class ModuleSelectEnv(gym.Env):
                 
                 self.inner_obs, reward, done, infos = self.inner_env.step(
                     inner_action)
-            else:
-                print("action error")
 
             cv2.imshow('input', self.detector.original_image_array)
             if cv2.waitKey(1) & 0xFF == ord('q'):

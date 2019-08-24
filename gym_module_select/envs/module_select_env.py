@@ -56,8 +56,8 @@ class ModuleSelectEnv(gym.Env):
                                       "episode length",
                                       "lane tracker usage ratio",
                                       "one frame processing time mean (ms)",
-                                      "step time mean (ms)",
-                                      "steps per second",
+                                      "one control time mean (ms)",
+                                      "controls per second",
                                       "EM mode " + str(EMERGENCY_MODE),
                                       "Controls per action " + str(CONTROLS_PER_ACTION),
                                       ])

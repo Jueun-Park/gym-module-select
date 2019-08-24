@@ -26,7 +26,7 @@ speed_controller = PID(Kp=1.0,
 
 PENALTY_WEIGHT = 0.5
 CONTROLS_PER_ACTION = 10
-EMERGENCY_MODE = False
+EMERGENCY_MODE = True
 
 
 class ModuleSelectEnv(gym.Env):
@@ -35,6 +35,32 @@ class ModuleSelectEnv(gym.Env):
 
     def __init__(self):
         self.verbose = 1
+        self.save_log_flag = True
+
+        if self.save_log_flag:
+            import os
+            import csv
+            directory_names = ["lane-tracker", "end-to-end", "sequence-model", "orc-model"]
+            simulate_num = 1
+            timestr = time.strftime("%Y%m%d-%H%M%S")
+            root_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+            root_dir = os.path.abspath(os.path.join(root_dir, ".."))
+            file_name = root_dir + "/result/" + directory_names[simulate_num] + "/"
+            os.makedirs(file_name, exist_ok=True)
+            file_name += timestr + ".csv"
+            print(">>> save csv log file: ", file_name)
+            self.csv_file = open(file_name, "w", newline="")
+            self.csv_writer = csv.writer(self.csv_file)
+            self.csv_writer.writerow(["original reward",
+                                      "episode reward",
+                                      "episode length",
+                                      "lane tracker usage ratio",
+                                      "one frame processing time mean (ms)",
+                                      "step time mean (ms)",
+                                      "steps per second",
+                                      "EM mode " + str(EMERGENCY_MODE),
+                                      "Controls per action " + str(CONTROLS_PER_ACTION),
+                                      ])
 
         stats_path = "logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0"
         hyperparams, stats_path = get_saved_hyperparams(
@@ -112,9 +138,9 @@ class ModuleSelectEnv(gym.Env):
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 pass
 
+            self.original_reward += reward[0]
             time_penalty = np.log(self.processing_times[-1]*50 + 1) * PENALTY_WEIGHT   # TODO
-            reward_sum += reward[0]
-            reward_sum -= time_penalty
+            reward_sum += reward[0] - time_penalty
             # print(reward, self.processing_times[-1], time_penalty)
             self.ep_len += 1
             check_processing_time(step_start_time, self.step_times)
@@ -131,7 +157,10 @@ class ModuleSelectEnv(gym.Env):
         self.detector.detect_lane(self.raw_obs)
         if self.verbose == 1:
             self._print_counting_log()
+        if self.save_log_flag:
+            self._write_counting_log()
         self.running_reward = 0
+        self.original_reward = 0
         self.ep_len = 0
         self.processing_times = []
         self.num_default = 0
@@ -147,9 +176,11 @@ class ModuleSelectEnv(gym.Env):
         self.inner_env.envs[0].env.exit_scene()
         time.sleep(0.5)
         cv2.destroyAllWindows()
+        self.csv_file.close()
 
     def _print_counting_log(self):
         try:
+            print("Original Reward: {:.2f}".format(self.original_reward))
             print("Episode Reward: {:.2f}".format(self.running_reward))
             print("Episode Length", self.ep_len)
             print("Default:", self.num_default, "/ VAE-SAC:", self.num_vae_sac,
@@ -161,6 +192,21 @@ class ModuleSelectEnv(gym.Env):
         except ZeroDivisionError:
             pass
         except AttributeError:
+            pass
+    
+    def _write_counting_log(self):
+        try:
+            self.csv_writer.writerow([self.original_reward,
+                                      self.running_reward,
+                                      self.ep_len,
+                                      self.num_default / (self.num_default+self.num_vae_sac),
+                                      1000 * np.mean(self.processing_times),
+                                      1000 * np.mean(self.step_times),
+                                      1 / np.mean(self.step_times),
+                                      ])
+            self.csv_file.flush()
+        except:
+            # self.csv_writer.writerow(["exception"])
             pass
 
 

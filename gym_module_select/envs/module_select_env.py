@@ -35,7 +35,8 @@ class ModuleSelectEnv(gym.Env):
 
     def __init__(self):
         self.verbose = 1
-        self.save_log_flag = True
+        self.save_log_flag = False
+        self.save_img_flag = True
 
         if self.save_log_flag:
             import os
@@ -61,6 +62,17 @@ class ModuleSelectEnv(gym.Env):
                                       "EM mode " + str(EMERGENCY_MODE),
                                       "Controls per action " + str(CONTROLS_PER_ACTION),
                                       ])
+
+        if self.save_img_flag:
+            import os
+            self.img_directory_names = []
+            timestr = time.strftime("%Y%m%d-%H%M%S")
+            root_dir = "/hdisk/"
+            self.img_directory_names.append(root_dir + timestr + "-lane-tracker/")
+            self.img_directory_names.append(root_dir + timestr + "-end-to-end/")
+            os.makedirs(self.img_directory_names[0], exist_ok=True)
+            os.makedirs(self.img_directory_names[1], exist_ok=True)
+            print(">>> save image log file: ", self.img_directory_names)
 
         stats_path = "logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0"
         hyperparams, stats_path = get_saved_hyperparams(
@@ -96,8 +108,10 @@ class ModuleSelectEnv(gym.Env):
             step_start_time = time.time()
 
             # TODO: do I have to include the time which took when getting the image in processing time?
+            # TODO: about 40ms, too slow.
             self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()
             
+            print("1", time.time() - step_start_time, end=' ')
             start_time = time.time()
             if action == 0:
                 # default line tracer
@@ -118,6 +132,13 @@ class ModuleSelectEnv(gym.Env):
 
                 self.inner_obs, reward, done, infos = self.inner_env.step(
                     inner_action)
+                print("2", time.time() - step_start_time, end=' ')
+
+                if self.save_img_flag:
+                    timestr = time.strftime("%Y%m%d-%H%M%S")                
+                    img_name = self.img_directory_names[0] + timestr + ".jpg"
+                    cv2.imwrite(img_name, self.raw_obs)
+
             elif action == 1:
                 # VAE-SAC agent
                 self.num_vae_sac += 1
@@ -131,6 +152,13 @@ class ModuleSelectEnv(gym.Env):
                 
                 self.inner_obs, reward, done, infos = self.inner_env.step(
                     inner_action)
+                
+                print("3", time.time() - step_start_time, end=' ')
+
+                if self.save_img_flag:
+                    timestr = time.strftime("%Y%m%d-%H%M%S")                
+                    img_name = self.img_directory_names[1] + timestr + ".jpg"
+                    cv2.imwrite(img_name, self.raw_obs)
             else:
                 print("action error")
 
@@ -147,6 +175,8 @@ class ModuleSelectEnv(gym.Env):
             if done:
                 break
             
+            print("4", time.time() - step_start_time)
+
         self.running_reward += reward_sum
         return infos[0]['encoded_obs'], reward_sum, done, infos[0]
 

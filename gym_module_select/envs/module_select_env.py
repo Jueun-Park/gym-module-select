@@ -38,6 +38,7 @@ class ModuleSelectEnv(gym.Env):
         self.save_log_flag = False
         self.save_img_flag = True
 
+
         if self.save_log_flag:
             import os
             import csv
@@ -104,14 +105,8 @@ class ModuleSelectEnv(gym.Env):
         if self.continuous:
             action = softmax(action)
             action = int(np.random.choice(2, 1, p=action))
-        for i in range(CONTROLS_PER_ACTION):
-            step_start_time = time.time()
 
-            # TODO: do I have to include the time which took when getting the image in processing time?
-            # TODO: about 40ms, too slow.
-            self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()
-            
-            print("1", time.time() - step_start_time, end=' ')
+        for i in range(CONTROLS_PER_ACTION):
             start_time = time.time()
             if action == 0:
                 # default line tracer
@@ -162,6 +157,13 @@ class ModuleSelectEnv(gym.Env):
             else:
                 print("action error")
 
+            a = time.time()
+            if self.first_flag:
+                self.first_flag = False
+            else:
+                self.raw_obs = infos[0]['raw_obs']
+            # print((time.time() - a) * 1000)  # ms
+
             cv2.imshow('input', self.detector.original_image_array)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 pass
@@ -171,7 +173,7 @@ class ModuleSelectEnv(gym.Env):
             reward_sum += reward[0] - time_penalty
             # print(reward, self.processing_times[-1], time_penalty)
             self.ep_len += 1
-            check_processing_time(step_start_time, self.step_times)
+            check_processing_time(start_time, self.step_times)  # check one control time
             if done:
                 break
             
@@ -182,7 +184,8 @@ class ModuleSelectEnv(gym.Env):
 
     def reset(self):
         self.inner_obs = self.inner_env.reset()
-        self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()
+        self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()  # first observe
+        self.first_flag = True
         self._, _, _, infos = self.inner_env.envs[0].env.observe()
         self.detector.detect_lane(self.raw_obs)
         if self.verbose == 1:

@@ -127,7 +127,6 @@ class ModuleSelectEnv(gym.Env):
 
                 self.inner_obs, reward, done, infos = self.inner_env.step(
                     inner_action)
-                print("2", time.time() - step_start_time, end=' ')
 
                 if self.save_img_flag:
                     timestr = time.strftime("%Y%m%d-%H%M%S")                
@@ -148,7 +147,6 @@ class ModuleSelectEnv(gym.Env):
                 self.inner_obs, reward, done, infos = self.inner_env.step(
                     inner_action)
                 
-                print("3", time.time() - step_start_time, end=' ')
 
                 if self.save_img_flag:
                     timestr = time.strftime("%Y%m%d-%H%M%S")                
@@ -176,8 +174,6 @@ class ModuleSelectEnv(gym.Env):
             check_processing_time(start_time, self.step_times)  # check one control time
             if done:
                 break
-            
-            print("4", time.time() - step_start_time)
 
         self.running_reward += reward_sum
         return infos[0]['encoded_obs'], reward_sum, done, infos[0]

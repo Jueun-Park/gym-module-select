@@ -96,6 +96,7 @@ class ModuleSelectEnv(gym.Env):
             step_start_time = time.time()
 
             # TODO: do I have to include the time which took when getting the image in processing time?
+            # TODO: about 40ms, too slow.
             self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()
             
             start_time = time.time()

@@ -201,7 +201,7 @@ class DonkeyVAEEnv(gym.Env):
             observation, reward, done, info = self.observe()
 
         # TODO:
-        # print(self.viewer.handler.driving_score)
+        print(self.viewer.handler.driving_score)
 
         return self.postprocessing_step(action, observation, reward, done, info)
 

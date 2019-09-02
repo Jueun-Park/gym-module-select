@@ -272,7 +272,7 @@ class DonkeyUnitySimHandler(IMesgHandler):
         self.speed = data["speed"]
         
         # TODO: change the simulator to percent version.
-        # self.driving_score = data["path_score"]
+        self.driving_score = data["path_score"]
 
         # Cross track error not always present.
         # Will be missing if path is not setup in the given scene.

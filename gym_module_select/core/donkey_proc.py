@@ -32,6 +32,8 @@ class DonkeyUnityProcess(object):
         else:
             self.process = subprocess.Popen(
                 [sim_path] + port_args)
+            # It doesn't work in load map version. (why?)
+            # os.system(sim_path + " --port " + str(port) + " &")
 
         print("Donkey subprocess started")
 

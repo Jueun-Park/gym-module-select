@@ -270,8 +270,6 @@ class DonkeyUnitySimHandler(IMesgHandler):
         self.z = data["pos_z"]
         self.steering_angle = data['steering_angle']
         self.speed = data["speed"]
-        
-        # TODO: change the simulator to percent version.
         self.driving_score = data["path_score"]
 
         # Cross track error not always present.

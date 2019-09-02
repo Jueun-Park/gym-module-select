@@ -52,6 +52,7 @@ class ModuleSelectEnv(gym.Env):
             self.csv_file = open(file_name, "w", newline="")
             self.csv_writer = csv.writer(self.csv_file)
             self.csv_writer.writerow(["original reward",
+                                      "Driving Score (%)",
                                       "episode reward",
                                       "episode length",
                                       "lane tracker usage ratio",
@@ -148,7 +149,8 @@ class ModuleSelectEnv(gym.Env):
             check_processing_time(start_time, self.step_times)  # check one control time
             if done:
                 break
-            
+        
+
         self.running_reward += reward_sum
         return infos[0]['encoded_obs'], reward_sum, done, infos[0]
 
@@ -184,6 +186,7 @@ class ModuleSelectEnv(gym.Env):
     def _print_counting_log(self):
         try:
             print("Original Reward: {:.2f}".format(self.original_reward))
+            print("Driving Score (%): {:.2f}".format(self.inner_env.envs[0].env.viewer.handler.driving_score / 10))
             print("Episode Reward: {:.2f}".format(self.running_reward))
             print("Episode Length", self.ep_len)
             print("Default:", self.num_default, "/ VAE-SAC:", self.num_vae_sac,
@@ -200,6 +203,7 @@ class ModuleSelectEnv(gym.Env):
     def _write_counting_log(self):
         try:
             self.csv_writer.writerow([self.original_reward,
+                                      self.inner_env.envs[0].env.viewer.handler.driving_score / 10,
                                       self.running_reward,
                                       self.ep_len,
                                       self.num_default / (self.num_default+self.num_vae_sac),

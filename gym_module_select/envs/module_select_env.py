@@ -27,6 +27,7 @@ speed_controller = PID(Kp=1.0,
 PENALTY_WEIGHT = 0.5
 CONTROLS_PER_ACTION = 10
 EMERGENCY_MODE = True
+LANE_TRACKER_TIME_DELAY = 0.4
 
 
 class ModuleSelectEnv(gym.Env):
@@ -108,6 +109,9 @@ class ModuleSelectEnv(gym.Env):
                     angle_error = 0
                     steer = steer_controller(angle_error)
                     speed = base_speed
+                
+                time.sleep(LANE_TRACKER_TIME_DELAY)  # TODO
+
                 inner_action = [[steer, speed]]
 
                 check_processing_time(start_time, self.processing_times)

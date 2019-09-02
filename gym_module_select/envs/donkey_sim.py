@@ -119,6 +119,7 @@ class DonkeyUnitySimHandler(IMesgHandler):
         self.current_step = 0
         self.speed = 0
         self.steering = None
+        self.driving_score = 0
 
         # Define which method should be called
         # for each type of message
@@ -173,6 +174,7 @@ class DonkeyUnitySimHandler(IMesgHandler):
         self.current_step = 0
         self.send_reset_car()
         self.send_control(0, 0)
+        self.driving_score = 0
         time.sleep(1.0)
         self.timer.reset()
 
@@ -268,6 +270,7 @@ class DonkeyUnitySimHandler(IMesgHandler):
         self.z = data["pos_z"]
         self.steering_angle = data['steering_angle']
         self.speed = data["speed"]
+        self.driving_score = data["path_score"]
 
         # Cross track error not always present.
         # Will be missing if path is not setup in the given scene.

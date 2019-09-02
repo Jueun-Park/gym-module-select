@@ -232,6 +232,7 @@ class DonkeyVAEEnv(gym.Env):
         :return: (np.ndarray, float, bool, dict)
         """
         observation, reward, done, info = self.viewer.observe()
+        info['raw_obs'] = observation
         # Learn from Pixels
         if self.vae is None:
             return observation, reward, done, info

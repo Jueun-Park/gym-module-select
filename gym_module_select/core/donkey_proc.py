@@ -17,7 +17,9 @@ class DonkeyUnityProcess(object):
         :param headless: (bool)
         :param port: (int)
         """
-        if not os.path.exists(sim_path):
+        AUTO_START = False
+        print("AUTO_START:", AUTO_START)
+        if not os.path.exists(sim_path) or not AUTO_START:
             print(sim_path, "does not exist. not starting sim.")
             return
 
@@ -30,6 +32,8 @@ class DonkeyUnityProcess(object):
         else:
             self.process = subprocess.Popen(
                 [sim_path] + port_args)
+            # It doesn't work in load map version. (why?)
+            # os.system(sim_path + " --port " + str(port) + " &")
 
         print("Donkey subprocess started")
 

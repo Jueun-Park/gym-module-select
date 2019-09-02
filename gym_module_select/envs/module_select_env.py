@@ -35,7 +35,7 @@ class ModuleSelectEnv(gym.Env):
 
     def __init__(self):
         self.verbose = 1
-        self.save_log_flag = True
+        self.save_log_flag = False
 
         if self.save_log_flag:
             import os
@@ -52,6 +52,7 @@ class ModuleSelectEnv(gym.Env):
             self.csv_file = open(file_name, "w", newline="")
             self.csv_writer = csv.writer(self.csv_file)
             self.csv_writer.writerow(["original reward",
+                                      "Driving Score (%)",
                                       "episode reward",
                                       "episode length",
                                       "lane tracker usage ratio",
@@ -93,11 +94,6 @@ class ModuleSelectEnv(gym.Env):
             action = softmax(action)
             action = int(np.random.choice(2, 1, p=action))
         for i in range(CONTROLS_PER_ACTION):
-            step_start_time = time.time()
-
-            # TODO: do I have to include the time which took when getting the image in processing time?
-            self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()
-            
             start_time = time.time()
             # default line tracer
             is_done, angle_error = self.detector.detect_lane(self.raw_obs)
@@ -128,6 +124,13 @@ class ModuleSelectEnv(gym.Env):
                 self.inner_obs, reward, done, infos = self.inner_env.step(
                     inner_action)
 
+            a = time.time()
+            if self.first_flag:
+                self.first_flag = False
+            else:
+                self.raw_obs = infos[0]['raw_obs']
+            # print((time.time() - a) * 1000)  # ms
+
             cv2.imshow('input', self.detector.original_image_array)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 pass
@@ -137,16 +140,18 @@ class ModuleSelectEnv(gym.Env):
             reward_sum += reward[0] - time_penalty
             # print(reward, self.processing_times[-1], time_penalty)
             self.ep_len += 1
-            check_processing_time(step_start_time, self.step_times)
+            check_processing_time(start_time, self.step_times)  # check one control time
             if done:
                 break
-            
+        
+
         self.running_reward += reward_sum
         return infos[0]['encoded_obs'], reward_sum, done, infos[0]
 
     def reset(self):
         self.inner_obs = self.inner_env.reset()
-        self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()
+        self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()  # first observe
+        self.first_flag = True
         self._, _, _, infos = self.inner_env.envs[0].env.observe()
         self.detector.detect_lane(self.raw_obs)
         if self.verbose == 1:
@@ -175,6 +180,7 @@ class ModuleSelectEnv(gym.Env):
     def _print_counting_log(self):
         try:
             print("Original Reward: {:.2f}".format(self.original_reward))
+            print("Driving Score (%): {:.2f}".format(self.inner_env.envs[0].env.viewer.handler.driving_score / 10))
             print("Episode Reward: {:.2f}".format(self.running_reward))
             print("Episode Length", self.ep_len)
             print("Default:", self.num_default, "/ VAE-SAC:", self.num_vae_sac,
@@ -191,6 +197,7 @@ class ModuleSelectEnv(gym.Env):
     def _write_counting_log(self):
         try:
             self.csv_writer.writerow([self.original_reward,
+                                      self.inner_env.envs[0].env.viewer.handler.driving_score / 10,
                                       self.running_reward,
                                       self.ep_len,
                                       self.num_default / (self.num_default+self.num_vae_sac),

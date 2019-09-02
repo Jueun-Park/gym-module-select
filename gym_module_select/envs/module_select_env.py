@@ -35,13 +35,13 @@ class ModuleSelectEnv(gym.Env):
 
     def __init__(self):
         self.verbose = 1
-        self.save_log_flag = False
+        self.save_log_flag = True
+        simulate_num = 3
 
         if self.save_log_flag:
             import os
             import csv
             directory_names = ["lane-tracker", "end-to-end", "sequence-model", "orc-model"]
-            simulate_num = 1
             timestr = time.strftime("%Y%m%d-%H%M%S")
             root_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
             root_dir = os.path.abspath(os.path.join(root_dir, ".."))

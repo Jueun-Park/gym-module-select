@@ -95,9 +95,9 @@ class ModuleSelectEnv(gym.Env):
             action = int(np.random.choice(2, 1, p=action))
         for i in range(CONTROLS_PER_ACTION):
             start_time = time.time()
-            # default line tracer
             is_done, angle_error = self.detector.detect_lane(self.raw_obs)
             if self.detector.left and self.detector.right:
+                # default line tracer
                 self.num_default += 1
                 angle_error = -angle_error
                 steer = steer_controller(angle_error)
@@ -124,7 +124,6 @@ class ModuleSelectEnv(gym.Env):
                 self.inner_obs, reward, done, infos = self.inner_env.step(
                     inner_action)
 
-            a = time.time()
             if self.first_flag:
                 self.first_flag = False
             else:

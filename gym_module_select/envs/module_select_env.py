@@ -149,8 +149,8 @@ class ModuleSelectEnv(gym.Env):
             check_processing_time(start_time, self.step_times)  # check one control time
             if done:
                 break
-        
 
+        self.driving_score_percent = np.max((self.inner_env.envs[0].env.viewer.handler.driving_score / 10, self.driving_score_percent))
         self.running_reward += reward_sum
         return infos[0]['encoded_obs'], reward_sum, done, infos[0]
 
@@ -171,6 +171,7 @@ class ModuleSelectEnv(gym.Env):
         self.num_default = 0
         self.num_vae_sac = 0
         self.step_times = []
+        self.driving_score_percent = 0
         return infos['encoded_obs']
 
     def render(self, mode='human', close=False):
@@ -186,7 +187,7 @@ class ModuleSelectEnv(gym.Env):
     def _print_counting_log(self):
         try:
             print("Original Reward: {:.2f}".format(self.original_reward))
-            print("Driving Score (%): {:.2f}".format(self.inner_env.envs[0].env.viewer.handler.driving_score / 10))
+            print("Driving Score (%): {:.2f}".format(self.driving_score_percent))
             print("Episode Reward: {:.2f}".format(self.running_reward))
             print("Episode Length", self.ep_len)
             print("Default:", self.num_default, "/ VAE-SAC:", self.num_vae_sac,
@@ -203,7 +204,7 @@ class ModuleSelectEnv(gym.Env):
     def _write_counting_log(self):
         try:
             self.csv_writer.writerow([self.original_reward,
-                                      self.inner_env.envs[0].env.viewer.handler.driving_score / 10,
+                                      self.driving_score_percent,
                                       self.running_reward,
                                       self.ep_len,
                                       self.num_default / (self.num_default+self.num_vae_sac),

@@ -27,6 +27,8 @@ speed_controller = PID(Kp=1.0,
 PENALTY_WEIGHT = 0.5
 CONTROLS_PER_ACTION = 10
 EMERGENCY_MODE = True
+LANE_TRACKER_TIME_DELAY_mu = 0  # 50% chance of delay (negative value is ignored)
+LANE_TRACKER_TIME_DELAY_sigma = 0.2
 
 
 class ModuleSelectEnv(gym.Env):
@@ -35,13 +37,14 @@ class ModuleSelectEnv(gym.Env):
 
     def __init__(self):
         self.verbose = 1
-        self.save_log_flag = False
+        self.save_log_flag = True
+        simulate_num = 1
 
         if self.save_log_flag:
             import os
             import csv
             directory_names = ["lane-tracker", "end-to-end", "sequence-model", "orc-model"]
-            simulate_num = 2
+
             timestr = time.strftime("%Y%m%d-%H%M%S")
             root_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
             root_dir = os.path.abspath(os.path.join(root_dir, ".."))
@@ -61,6 +64,8 @@ class ModuleSelectEnv(gym.Env):
                                       "controls per second",
                                       "EM mode " + str(EMERGENCY_MODE),
                                       "Controls per action " + str(CONTROLS_PER_ACTION),
+                                      "Delay mu " + str(LANE_TRACKER_TIME_DELAY_mu),
+                                      "sigma " + str(LANE_TRACKER_TIME_DELAY_sigma),
                                       ])
 
         stats_path = "logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0"
@@ -108,6 +113,11 @@ class ModuleSelectEnv(gym.Env):
 
                 check_processing_time(start_time, self.processing_times)
 
+                time_delay = np.random.normal(loc=LANE_TRACKER_TIME_DELAY_mu,
+                                              scale=LANE_TRACKER_TIME_DELAY_sigma)  # scale: standard deviation
+                if time_delay > 0:
+                    time.sleep(time_delay)  # TODO
+                
                 self.inner_obs, reward, done, infos = self.inner_env.step(
                     inner_action)
             else:

@@ -6,7 +6,8 @@ import os
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import SAC
 
-model_name = "/sac-models/sac-model_1000.pkl"
+dir_name = "/sac-models-190903-1/"
+model_name = dir_name + "sac-model_6500.pkl"
 
 env = gym.make('ModuleSelectContinuous-v0')
 env = DummyVecEnv([lambda: env])

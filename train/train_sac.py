@@ -14,8 +14,8 @@ TIMESTEPS = 10000001
 
 best_mean_reward = -numpy.inf
 n_steps = 0
-log_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-log-dl-2/"
-model_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-models-dl-2/"
+log_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-log-190903-1/"
+model_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-models-190903-1/"
 
 
 def callback(_locals, _globals):
@@ -25,7 +25,7 @@ def callback(_locals, _globals):
     :param _globals: (dict)
     """
     global best_mean_reward, n_steps
-    if (n_steps + 1) % 100 == 0:
+    if (n_steps + 1) % 500 == 0:
         x, y = ts2xy(load_results(log_directory), 'timesteps')
         if len(x) > 0:
             mean_reward = numpy.mean(y[-100:])
@@ -55,6 +55,7 @@ if __name__ == "__main__":
         policy=MlpPolicy,
         verbose=1,
         tensorboard_log="./sac_tensorboard/",
+        batch_size=1024,
     )
 
     model.learn(

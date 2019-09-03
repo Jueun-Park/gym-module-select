@@ -27,8 +27,8 @@ speed_controller = PID(Kp=1.0,
 PENALTY_WEIGHT = 0.5
 CONTROLS_PER_ACTION = 10
 EMERGENCY_MODE = True
-LANE_TRACKER_TIME_DELAY_MU = 0.4
-LANE_TRACKER_TIME_DELAY_sigma = 0.1
+LANE_TRACKER_TIME_DELAY_mu = 0  # 50% chance of delay (negative value is ignored)
+LANE_TRACKER_TIME_DELAY_sigma = 0.2
 
 
 class ModuleSelectEnv(gym.Env):
@@ -38,7 +38,7 @@ class ModuleSelectEnv(gym.Env):
     def __init__(self):
         self.verbose = 1
         self.save_log_flag = True
-        simulate_num = 3
+        simulate_num = 1
 
         if self.save_log_flag:
             import os
@@ -63,7 +63,7 @@ class ModuleSelectEnv(gym.Env):
                                       "controls per second",
                                       "EM mode " + str(EMERGENCY_MODE),
                                       "Controls per action " + str(CONTROLS_PER_ACTION),
-                                      "Delay mu " + str(LANE_TRACKER_TIME_DELAY_MU),
+                                      "Delay mu " + str(LANE_TRACKER_TIME_DELAY_mu),
                                       "sigma " + str(LANE_TRACKER_TIME_DELAY_sigma),
                                       ])
 
@@ -117,7 +117,7 @@ class ModuleSelectEnv(gym.Env):
 
                 check_processing_time(start_time, self.processing_times)
 
-                time_delay = np.random.normal(loc=LANE_TRACKER_TIME_DELAY_MU,
+                time_delay = np.random.normal(loc=LANE_TRACKER_TIME_DELAY_mu,
                                               scale=LANE_TRACKER_TIME_DELAY_sigma)  # scale: standard deviation
                 if time_delay > 0:
                     time.sleep(time_delay)  # TODO

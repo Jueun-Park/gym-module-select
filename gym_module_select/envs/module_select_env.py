@@ -38,7 +38,7 @@ class ModuleSelectEnv(gym.Env):
     def __init__(self):
         self.verbose = 1
         self.save_log_flag = True
-        simulate_num = 1
+        simulate_num = 2
 
         if self.save_log_flag:
             import os

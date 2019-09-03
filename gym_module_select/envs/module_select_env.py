@@ -27,7 +27,8 @@ speed_controller = PID(Kp=1.0,
 PENALTY_WEIGHT = 0.5
 CONTROLS_PER_ACTION = 10
 EMERGENCY_MODE = True
-LANE_TRACKER_TIME_DELAY = 0.4
+LANE_TRACKER_TIME_DELAY_MU = 0.4
+LANE_TRACKER_TIME_DELAY_sigma = 0.1
 
 
 class ModuleSelectEnv(gym.Env):
@@ -62,6 +63,8 @@ class ModuleSelectEnv(gym.Env):
                                       "controls per second",
                                       "EM mode " + str(EMERGENCY_MODE),
                                       "Controls per action " + str(CONTROLS_PER_ACTION),
+                                      "Delay mu " + str(LANE_TRACKER_TIME_DELAY_MU),
+                                      "sigma " + str(LANE_TRACKER_TIME_DELAY_sigma),
                                       ])
 
         stats_path = "logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0"
@@ -110,12 +113,15 @@ class ModuleSelectEnv(gym.Env):
                     steer = steer_controller(angle_error)
                     speed = base_speed
                 
-                time.sleep(LANE_TRACKER_TIME_DELAY)  # TODO
-
                 inner_action = [[steer, speed]]
 
                 check_processing_time(start_time, self.processing_times)
 
+                time_delay = np.random.normal(loc=LANE_TRACKER_TIME_DELAY_MU,
+                                              scale=LANE_TRACKER_TIME_DELAY_sigma)  # scale: standard deviation
+                if time_delay > 0:
+                    time.sleep(time_delay)  # TODO
+                
                 self.inner_obs, reward, done, infos = self.inner_env.step(
                     inner_action)
             elif action == 1:

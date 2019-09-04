@@ -14,8 +14,8 @@ TIMESTEPS = 10000001
 
 best_mean_reward = -numpy.inf
 n_steps = 0
-log_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-log-190903-1/"
-model_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-models-190903-1/"
+log_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-log/"
+model_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-models/"
 
 
 def callback(_locals, _globals):

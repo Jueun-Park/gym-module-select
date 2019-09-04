@@ -142,7 +142,7 @@ class LaneDetector:
             self.intersection_point = tuple(int(i)
                                             for i in self.intersection_point)
         except:
-            print("exception")
+            print("[Lane Detector] exception")
             self.intersection_point = (self.image_array.shape[1]/2, 0)
         if self.intersection_point[0] > 0 and self.intersection_point[1] > 0:
             cv2.circle(img=self.original_image_array,

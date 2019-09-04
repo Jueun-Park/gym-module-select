@@ -29,7 +29,15 @@ CONTROLS_PER_ACTION = 10
 EMERGENCY_MODE = True
 # LANE_TRACKER_TIME_DELAY_mu = 0  # 50% chance of delay (negative value is ignored)
 # LANE_TRACKER_TIME_DELAY_sigma = 0.05
-TWICE_DELAY = True
+# TWICE_DELAY = True
+
+directory_names = {0: "0-lane-tracker",
+                   1: "1-end-to-end",
+                   2: "2-sequence-model",
+                   3: "3-orc-model",
+                   4: "train-or-test",
+                   }
+LOG_NUM = 2
 
 
 class ModuleSelectEnv(gym.Env):
@@ -39,36 +47,9 @@ class ModuleSelectEnv(gym.Env):
     def __init__(self):
         self.verbose = 1
         self.save_log_flag = True
-        simulate_num = 2
 
         if self.save_log_flag:
-            import os
-            import csv
-            directory_names = ["lane-tracker", "end-to-end", "sequence-model", "orc-model"]
-
-            timestr = time.strftime("%Y%m%d-%H%M%S")
-            root_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-            root_dir = os.path.abspath(os.path.join(root_dir, ".."))
-            file_name = root_dir + "/result/" + directory_names[simulate_num] + "/"
-            os.makedirs(file_name, exist_ok=True)
-            file_name += timestr + ".csv"
-            print(">>> save csv log file: ", file_name)
-            self.csv_file = open(file_name, "w", newline="")
-            self.csv_writer = csv.writer(self.csv_file)
-            self.csv_writer.writerow(["original reward",
-                                      "Driving Score (%)",
-                                      "episode reward",
-                                      "episode length",
-                                      "lane tracker usage ratio",
-                                      "one frame processing time mean (ms)",
-                                      "one control time mean (ms)",
-                                      "controls per second",
-                                      "EM mode " + str(EMERGENCY_MODE),
-                                      "Controls per action " + str(CONTROLS_PER_ACTION),
-                                    #   "Delay mu " + str(LANE_TRACKER_TIME_DELAY_mu),
-                                    #   "sigma " + str(LANE_TRACKER_TIME_DELAY_sigma),
-                                      "Twice dealy " + str(TWICE_DELAY),
-                                      ])
+            self._init_log_to_write(LOG_NUM)
 
         stats_path = "logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0"
         hyperparams, stats_path = get_saved_hyperparams(
@@ -104,30 +85,22 @@ class ModuleSelectEnv(gym.Env):
             start_time = time.time()
             is_done, angle_error = self.detector.detect_lane(self.raw_obs)
             if self.detector.left and self.detector.right:
-                # default line tracer
-                self.num_default += 1
+                # lane tracker
+                self.num_lane_tracker += 1
                 angle_error = -angle_error
                 steer = steer_controller(angle_error)
                 reduction = speed_controller(steer)
                 speed = base_speed - np.abs(reduction)
-            
+
                 inner_action = [[steer, speed]]
 
                 check_processing_time(start_time, self.processing_times)
 
-                # time_delay = np.random.normal(loc=LANE_TRACKER_TIME_DELAY_mu,
-                #                               scale=LANE_TRACKER_TIME_DELAY_sigma)  # scale: standard deviation
-                # if time_delay > 0:
-                #     time.sleep(time_delay)  # TODO
-                give_delay = np.random.choice([TWICE_DELAY, False], p=[0.5, 0.5])
-                if give_delay:
-                    time.sleep(2 * self.processing_times[-1])
-                
                 self.inner_obs, reward, done, infos = self.inner_env.step(
                     inner_action)
             else:
-                # VAE-SAC agent
-                self.num_vae_sac += 1
+                # end-to-end agent
+                self.num_end_to_end += 1
                 inner_action, _ = self.model.predict(
                     self.inner_obs, deterministic=True)
                 # Clip Action to avoid out of bound errors
@@ -143,7 +116,6 @@ class ModuleSelectEnv(gym.Env):
                 self.first_flag = False
             else:
                 self.raw_obs = infos[0]['raw_obs']
-            # print((time.time() - a) * 1000)  # ms
 
             cv2.imshow('input', self.detector.original_image_array)
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -152,7 +124,7 @@ class ModuleSelectEnv(gym.Env):
             self.original_reward += reward[0]
             time_penalty = np.log(self.processing_times[-1]*50 + 1) * PENALTY_WEIGHT   # TODO
             reward_sum += reward[0] - time_penalty
-            # print(reward, self.processing_times[-1], time_penalty)
+
             self.ep_len += 1
             check_processing_time(start_time, self.step_times)  # check one control time
             if done:
@@ -176,8 +148,8 @@ class ModuleSelectEnv(gym.Env):
         self.original_reward = 0
         self.ep_len = 0
         self.processing_times = []
-        self.num_default = 0
-        self.num_vae_sac = 0
+        self.num_lane_tracker = 0
+        self.num_end_to_end = 0
         self.step_times = []
         self.driving_score_percent = 0
         return infos['encoded_obs']
@@ -192,18 +164,48 @@ class ModuleSelectEnv(gym.Env):
         cv2.destroyAllWindows()
         self.csv_file.close()
 
+    def _init_log_to_write(self, simulate_num):
+        import os
+        import csv
+        timestr = time.strftime("%Y%m%d-%H%M%S")
+        root_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+        root_dir = os.path.abspath(os.path.join(root_dir, ".."))
+        file_name = root_dir + "/result/" + directory_names[simulate_num] + "/"
+        os.makedirs(file_name, exist_ok=True)
+        file_name += directory_names[simulate_num] + "-" + timestr + ".csv"
+        print(">>> save csv log file: ", file_name)
+        self.csv_file = open(file_name, "w", newline="")
+        self.csv_writer = csv.writer(self.csv_file)
+        self.csv_writer.writerow(["original reward",
+                                    "driving Score (%)",
+                                    "episode reward",
+                                    "episode length",
+                                    "lane tracker usage ratio",
+                                    "one frame processing time mean (ms)",
+                                    "one control time mean (ms)",
+                                    "controls per second",
+                                    "EM mode " + str(EMERGENCY_MODE),
+                                    "controls per action " + str(CONTROLS_PER_ACTION),
+                                    # "Delay mu " + str(LANE_TRACKER_TIME_DELAY_mu),
+                                    # "sigma " + str(LANE_TRACKER_TIME_DELAY_sigma),
+                                    # "Twice delay " + str(TWICE_DELAY),
+                                    ])
+
     def _print_counting_log(self):
+        print("=== Reset ===")
         try:
             print("Original Reward: {:.2f}".format(self.original_reward))
             print("Driving Score (%): {:.2f}".format(self.driving_score_percent))
             print("Episode Reward: {:.2f}".format(self.running_reward))
             print("Episode Length", self.ep_len)
-            print("Default:", self.num_default, "/ VAE-SAC:", self.num_vae_sac,
-                "/ Default ratio: {:.2f}".format(self.num_default / (self.num_default+self.num_vae_sac)))
+            print("Lane Tracker:", self.num_lane_tracker,
+                  "/ End-to-end Agent:", self.num_end_to_end,
+                  "/ Lane tracker usage ratio: {:.2f}".format(
+                    self.num_lane_tracker / (self.num_lane_tracker+self.num_end_to_end)))
             print("One frame processing time mean (ms): {:.2f}".format(
-                1000 * np.mean(self.processing_times)))
+                    1000 * np.mean(self.processing_times)))
             print("Step time mean (ms): {:.2f}".format(1000 * np.mean(self.step_times)))
-            print("Steps per second: {:.2f}".format(1 / np.mean(self.step_times)))
+            print("Controls per second: {:.2f}".format(1 / np.mean(self.step_times)))
         except ZeroDivisionError:
             pass
         except AttributeError:
@@ -215,7 +217,7 @@ class ModuleSelectEnv(gym.Env):
                                       self.driving_score_percent,
                                       self.running_reward,
                                       self.ep_len,
-                                      self.num_default / (self.num_default+self.num_vae_sac),
+                                      self.num_lane_tracker / (self.num_lane_tracker+self.num_end_to_end),
                                       1000 * np.mean(self.processing_times),
                                       1000 * np.mean(self.step_times),
                                       1 / np.mean(self.step_times),

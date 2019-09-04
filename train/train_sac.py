@@ -1,8 +1,10 @@
+import argparse
 import os
 import numpy
 import gym
 import sys
 sys.path.append('.')
+import time
 import gym_module_select
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines.sac.policies import MlpPolicy
@@ -12,10 +14,22 @@ from stable_baselines import SAC
 
 TIMESTEPS = 10000001
 
+
+def init_parse_argument():
+    parser = argparse.ArgumentParser()
+    timestr = time.strftime("%H%M%S")
+    parser.add_argument('-i', '--id', help='nickname of the train', type=str, default=timestr)
+    args = parser.parse_args()
+    return args
+
+
+
 best_mean_reward = -numpy.inf
 n_steps = 0
-log_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-log-190903-1/"
-model_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-models-190903-1/"
+args = init_parse_argument()
+datestr = time.strftime("%Y%m%d")
+log_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-log-" + args.id + "-" +  datestr + "/"
+model_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-models-" + args.id + "-" + datestr + "/"
 
 
 def callback(_locals, _globals):

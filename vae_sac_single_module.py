@@ -9,7 +9,7 @@ env = gym.make('ModuleSelect-v0')
 env = DummyVecEnv([lambda: env])
 
 obs = env.reset()
-for i in range(1000):
+for i in range(10000):
     action = [1]
     obs, rewards, dones, info = env.step(action)
     env.render()

@@ -185,7 +185,7 @@ class ModuleSelectEnv(gym.Env):
         self.csv_file = open(file_name, "w", newline="")
         self.csv_writer = csv.writer(self.csv_file)
         self.csv_writer.writerow(["original reward",
-                                    "Driving Score (%)",
+                                    "driving Score (%)",
                                     "episode reward",
                                     "episode length",
                                     "lane tracker usage ratio",
@@ -193,22 +193,25 @@ class ModuleSelectEnv(gym.Env):
                                     "one control time mean (ms)",
                                     "controls per second",
                                     "EM mode " + str(EMERGENCY_MODE),
-                                    "Controls per action " + str(CONTROLS_PER_ACTION),
+                                    "controls per action " + str(CONTROLS_PER_ACTION),
                                     # "Delay mu " + str(LANE_TRACKER_TIME_DELAY_mu),
                                     # "sigma " + str(LANE_TRACKER_TIME_DELAY_sigma),
                                     # "Twice delay " + str(TWICE_DELAY),
                                     ])
 
     def _print_counting_log(self):
+        print("=== Reset ===")
         try:
             print("Original Reward: {:.2f}".format(self.original_reward))
             print("Driving Score (%): {:.2f}".format(self.driving_score_percent))
             print("Episode Reward: {:.2f}".format(self.running_reward))
             print("Episode Length", self.ep_len)
-            print("Lane Tracker:", self.num_lane_tracker, "/ End-to-end Agent:", self.num_end_to_end,
-                "/ Lane tracker usage ratio: {:.2f}".format(self.num_lane_tracker / (self.num_lane_tracker+self.num_end_to_end)))
+            print("Lane Tracker:", self.num_lane_tracker,
+                  "/ End-to-end Agent:", self.num_end_to_end,
+                  "/ Lane tracker usage ratio: {:.2f}".format(
+                    self.num_lane_tracker / (self.num_lane_tracker+self.num_end_to_end)))
             print("One frame processing time mean (ms): {:.2f}".format(
-                1000 * np.mean(self.processing_times)))
+                    1000 * np.mean(self.processing_times)))
             print("Step time mean (ms): {:.2f}".format(1000 * np.mean(self.step_times)))
             print("Controls per second: {:.2f}".format(1 / np.mean(self.step_times)))
         except ZeroDivisionError:

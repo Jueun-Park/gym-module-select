@@ -29,7 +29,15 @@ CONTROLS_PER_ACTION = 10
 EMERGENCY_MODE = True
 # LANE_TRACKER_TIME_DELAY_mu = 0  # 50% chance of delay (negative value is ignored)
 # LANE_TRACKER_TIME_DELAY_sigma = 0.05
-TWICE_DELAY = True
+# TWICE_DELAY = True
+
+directory_names = {0: "0-lane-tracker",
+                   1: "1-end-to-end",
+                   2: "2-sequence-model",
+                   3: "3-orc-model",
+                   4: "train-or-test",
+                   }
+LOG_NUM = 4
 
 
 class ModuleSelectEnv(gym.Env):
@@ -39,35 +47,8 @@ class ModuleSelectEnv(gym.Env):
     def __init__(self):
         self.verbose = 1
         self.save_log_flag = True
-        simulate_num = 3
-
         if self.save_log_flag:
-            import os
-            import csv
-            directory_names = ["lane-tracker", "end-to-end", "sequence-model", "orc-model"]
-            timestr = time.strftime("%Y%m%d-%H%M%S")
-            root_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-            root_dir = os.path.abspath(os.path.join(root_dir, ".."))
-            file_name = root_dir + "/result/" + directory_names[simulate_num] + "/"
-            os.makedirs(file_name, exist_ok=True)
-            file_name += timestr + ".csv"
-            print(">>> save csv log file: ", file_name)
-            self.csv_file = open(file_name, "w", newline="")
-            self.csv_writer = csv.writer(self.csv_file)
-            self.csv_writer.writerow(["original reward",
-                                      "Driving Score (%)",
-                                      "episode reward",
-                                      "episode length",
-                                      "lane tracker usage ratio",
-                                      "one frame processing time mean (ms)",
-                                      "one control time mean (ms)",
-                                      "controls per second",
-                                      "EM mode " + str(EMERGENCY_MODE),
-                                      "Controls per action " + str(CONTROLS_PER_ACTION),
-                                    #   "Delay mu " + str(LANE_TRACKER_TIME_DELAY_mu),
-                                    #   "sigma " + str(LANE_TRACKER_TIME_DELAY_sigma),
-                                      "Twice dealy " + str(TWICE_DELAY),
-                                      ])
+            self._init_log_to_write(LOG_NUM)
 
         stats_path = "logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0"
         hyperparams, stats_path = get_saved_hyperparams(
@@ -94,6 +75,33 @@ class ModuleSelectEnv(gym.Env):
                                             shape=(1, self.inner_env.envs[0].env.z_size),
                                             dtype=np.float32)
 
+    def _init_log_to_write(self, simulate_num):
+        import os
+        import csv
+        timestr = time.strftime("%Y%m%d-%H%M%S")
+        root_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+        root_dir = os.path.abspath(os.path.join(root_dir, ".."))
+        file_name = root_dir + "/result/" + directory_names[simulate_num] + "/"
+        os.makedirs(file_name, exist_ok=True)
+        file_name += directory_names[simulate_num] + "-" + timestr + ".csv"
+        print(">>> save csv log file: ", file_name)
+        self.csv_file = open(file_name, "w", newline="")
+        self.csv_writer = csv.writer(self.csv_file)
+        self.csv_writer.writerow(["original reward",
+                                    "Driving Score (%)",
+                                    "episode reward",
+                                    "episode length",
+                                    "lane tracker usage ratio",
+                                    "one frame processing time mean (ms)",
+                                    "one control time mean (ms)",
+                                    "controls per second",
+                                    "EM mode " + str(EMERGENCY_MODE),
+                                    "Controls per action " + str(CONTROLS_PER_ACTION),
+                                    # "Delay mu " + str(LANE_TRACKER_TIME_DELAY_mu),
+                                    # "sigma " + str(LANE_TRACKER_TIME_DELAY_sigma),
+                                    # "Twice delay " + str(TWICE_DELAY),
+                                    ])
+
     def step(self, action):
         reward_sum = 0
         if self.continuous:
@@ -104,28 +112,10 @@ class ModuleSelectEnv(gym.Env):
             if action == 0:
                 # default line tracer
                 self.num_default += 1
-                is_done, angle_error = self.detector.detect_lane(self.raw_obs)
-                if is_done or EMERGENCY_MODE:
-                    angle_error = -angle_error
-                    steer = steer_controller(angle_error)
-                    reduction = speed_controller(steer)
-                    speed = base_speed - np.abs(reduction)
-                else:
-                    angle_error = 0
-                    steer = steer_controller(angle_error)
-                    speed = base_speed
-                
+                steer, speed = self._lane_tracker()                
                 inner_action = [[steer, speed]]
 
                 check_processing_time(start_time, self.processing_times)
-
-                # time_delay = np.random.normal(loc=LANE_TRACKER_TIME_DELAY_mu,
-                #                               scale=LANE_TRACKER_TIME_DELAY_sigma)  # scale: standard deviation
-                # if time_delay > 0:
-                #     time.sleep(time_delay)  # TODO
-                give_delay = np.random.choice([TWICE_DELAY, False], p=[0.5, 0.5])
-                if give_delay:
-                    time.sleep(2 * self.processing_times[-1])
                 
                 self.inner_obs, reward, done, infos = self.inner_env.step(
                     inner_action)
@@ -145,12 +135,10 @@ class ModuleSelectEnv(gym.Env):
             else:
                 print("action error")
 
-            a = time.time()
             if self.first_flag:
                 self.first_flag = False
             else:
                 self.raw_obs = infos[0]['raw_obs']
-            # print((time.time() - a) * 1000)  # ms
 
             cv2.imshow('input', self.detector.original_image_array)
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -159,7 +147,7 @@ class ModuleSelectEnv(gym.Env):
             self.original_reward += reward[0]
             time_penalty = np.log(self.processing_times[-1]*50 + 1) * PENALTY_WEIGHT   # TODO
             reward_sum += reward[0] - time_penalty
-            # print(reward, self.processing_times[-1], time_penalty)
+
             self.ep_len += 1
             check_processing_time(start_time, self.step_times)  # check one control time
             if done:
@@ -168,6 +156,20 @@ class ModuleSelectEnv(gym.Env):
         self.driving_score_percent = np.max((self.inner_env.envs[0].env.viewer.handler.driving_score / 10, self.driving_score_percent))
         self.running_reward += reward_sum
         return infos[0]['encoded_obs'], reward_sum, done, infos[0]
+
+    def _lane_tracker(self):
+        is_done, angle_error = self.detector.detect_lane(self.raw_obs)
+        if is_done or EMERGENCY_MODE:
+            angle_error = -angle_error
+            steer = steer_controller(angle_error)
+            reduction = speed_controller(steer)
+            speed = base_speed - np.abs(reduction)
+        else:
+            angle_error = 0
+            steer = steer_controller(angle_error)
+            speed = base_speed
+
+        return steer, speed
 
     def reset(self):
         self.inner_obs = self.inner_env.reset()

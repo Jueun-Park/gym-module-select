@@ -28,8 +28,8 @@ best_mean_reward = -numpy.inf
 n_steps = 0
 args = init_parse_argument()
 datestr = time.strftime("%Y%m%d")
-log_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-log-" + datestr + "-" +  args.id + "/"
-model_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-models-" + datestr + "-" + args.id + "/"
+log_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-log-" + args.id + "-" +  datestr + "/"
+model_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-models-" + args.id + "-" + datestr + "/"
 
 
 def callback(_locals, _globals):

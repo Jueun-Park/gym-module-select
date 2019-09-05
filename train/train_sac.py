@@ -71,8 +71,10 @@ if __name__ == "__main__":
         tensorboard_log="./sac_tensorboard/",
         batch_size=1024,
     )
-
-    model.learn(
-        total_timesteps=TIMESTEPS,
-        callback=callback
-    )
+    try:
+        model.learn(
+            total_timesteps=TIMESTEPS,
+            callback=callback
+        )
+    except:
+        env.envs[0].env.close()

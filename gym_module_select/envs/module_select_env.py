@@ -177,6 +177,25 @@ class ModuleSelectEnv(gym.Env):
         cv2.destroyAllWindows()
         self.csv_file.close()
 
+    def _print_counting_log(self):
+        print("=== Reset ===")
+        try:
+            print("Original Reward: {:.2f}".format(self.original_reward))
+            print("Driving Score (%): {:.2f}".format(self.driving_score_percent))
+            print("Episode Reward: {:.2f}".format(self.running_reward))
+            print("Lane Tracker:", self.num_lane_tracker,
+                  "/ End-to-end Agent:", self.num_end_to_end,
+                  "/ Lane tracker usage ratio: {:.2f}".format(
+                    self.num_lane_tracker / (self.num_lane_tracker+self.num_end_to_end)))
+            print("One frame processing time mean (ms): {:.2f}".format(
+                    1000 * np.mean(self.processing_times)))
+            print("Step time mean (ms): {:.2f}".format(1000 * np.mean(self.step_times)))
+            print("Controls per second: {:.2f}".format(1 / np.mean(self.step_times)))
+        except ZeroDivisionError:
+            pass
+        except AttributeError:
+            pass
+
     def _init_log_to_write(self, simulate_num):
         import os
         import csv
@@ -190,9 +209,8 @@ class ModuleSelectEnv(gym.Env):
         self.csv_file = open(file_name, "w", newline="")
         self.csv_writer = csv.writer(self.csv_file)
         self.csv_writer.writerow(["original reward",
-                                    "driving Score (%)",
+                                    "driving score (%)",
                                     "episode reward",
-                                    "episode length",
                                     "lane tracker usage ratio",
                                     "one frame processing time mean (ms)",
                                     "one control time mean (ms)",
@@ -204,33 +222,12 @@ class ModuleSelectEnv(gym.Env):
                                     # "Twice delay " + str(TWICE_DELAY),
                                     "time sleep per step " + str(TIME_DELAY),
                                     ])
-
-    def _print_counting_log(self):
-        print("=== Reset ===")
-        try:
-            print("Original Reward: {:.2f}".format(self.original_reward))
-            print("Driving Score (%): {:.2f}".format(self.driving_score_percent))
-            print("Episode Reward: {:.2f}".format(self.running_reward))
-            print("Episode Length", self.ep_len)
-            print("Lane Tracker:", self.num_lane_tracker,
-                  "/ End-to-end Agent:", self.num_end_to_end,
-                  "/ Lane tracker usage ratio: {:.2f}".format(
-                    self.num_lane_tracker / (self.num_lane_tracker+self.num_end_to_end)))
-            print("One frame processing time mean (ms): {:.2f}".format(
-                    1000 * np.mean(self.processing_times)))
-            print("Step time mean (ms): {:.2f}".format(1000 * np.mean(self.step_times)))
-            print("Controls per second: {:.2f}".format(1 / np.mean(self.step_times)))
-        except ZeroDivisionError:
-            pass
-        except AttributeError:
-            pass
     
     def _write_counting_log(self):
         try:
             self.csv_writer.writerow([self.original_reward,
                                       self.driving_score_percent,
                                       self.running_reward,
-                                      self.ep_len,
                                       self.num_lane_tracker / (self.num_lane_tracker+self.num_end_to_end),
                                       1000 * np.mean(self.processing_times),
                                       1000 * np.mean(self.step_times),

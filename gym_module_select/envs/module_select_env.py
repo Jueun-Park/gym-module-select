@@ -27,9 +27,7 @@ speed_controller = PID(Kp=1.0,
 PENALTY_WEIGHT = 0.5
 CONTROLS_PER_ACTION = 10
 EMERGENCY_MODE = True
-# LANE_TRACKER_TIME_DELAY_mu = 0  # 50% chance of delay (negative value is ignored)
-# LANE_TRACKER_TIME_DELAY_sigma = 0.05
-# TWICE_DELAY = True
+
 TIME_DELAY = 100
 TIME_DELAY /= 1000  # ms
 
@@ -215,12 +213,9 @@ class ModuleSelectEnv(gym.Env):
                                     "one frame processing time mean (ms)",
                                     "one control time mean (ms)",
                                     "controls per second",
-                                    "EM mode " + str(EMERGENCY_MODE),
-                                    "controls per action " + str(CONTROLS_PER_ACTION),
-                                    # "Delay mu " + str(LANE_TRACKER_TIME_DELAY_mu),
-                                    # "sigma " + str(LANE_TRACKER_TIME_DELAY_sigma),
-                                    # "Twice delay " + str(TWICE_DELAY),
                                     "time sleep per step " + str(TIME_DELAY),
+                                    "controls per action " + str(CONTROLS_PER_ACTION),
+                                    "EM mode " + str(EMERGENCY_MODE),
                                     ])
     
     def _write_counting_log(self):

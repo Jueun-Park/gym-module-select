@@ -30,6 +30,8 @@ EMERGENCY_MODE = True
 # LANE_TRACKER_TIME_DELAY_mu = 0  # 50% chance of delay (negative value is ignored)
 # LANE_TRACKER_TIME_DELAY_sigma = 0.05
 # TWICE_DELAY = True
+TIME_DELAY = 100
+TIME_DELAY /= 1000  # ms
 
 directory_names = {0: "0-lane-tracker",
                    1: "1-end-to-end",
@@ -82,6 +84,9 @@ class ModuleSelectEnv(gym.Env):
             action = int(np.random.choice(2, 1, p=action))
         for i in range(CONTROLS_PER_ACTION):
             start_time = time.time()
+
+            time.sleep(TIME_DELAY)
+
             if action == 0:  # lane tracker
                 self.num_lane_tracker += 1
                 steer, speed = self._lane_tracker()                
@@ -197,6 +202,7 @@ class ModuleSelectEnv(gym.Env):
                                     # "Delay mu " + str(LANE_TRACKER_TIME_DELAY_mu),
                                     # "sigma " + str(LANE_TRACKER_TIME_DELAY_sigma),
                                     # "Twice delay " + str(TWICE_DELAY),
+                                    "time sleep per step " + str(TIME_DELAY),
                                     ])
 
     def _print_counting_log(self):

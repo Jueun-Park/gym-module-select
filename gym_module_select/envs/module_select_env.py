@@ -28,27 +28,25 @@ PENALTY_WEIGHT = 0.5
 CONTROLS_PER_ACTION = 10
 EMERGENCY_MODE = True
 
-TIME_DELAY = 100
-TIME_DELAY /= 1000  # ms
-
 directory_names = {0: "0-lane-tracker",
                    1: "1-end-to-end",
                    2: "2-sequence-model",
                    3: "3-orc-model",
                    4: "train-or-test",
                    }
-LOG_NUM = 4
 
 
 class ModuleSelectEnv(gym.Env):
     metadata = {'render.modes': ['human']}
     continuous = False
 
-    def __init__(self):
+    def __init__(self, log_num=4, custom_delay=0):
+        super(ModuleSelectEnv, self).__init__()
         self.verbose = 1
         self.save_log_flag = True
+        self.custom_delay = custom_delay
         if self.save_log_flag:
-            self._init_log_to_write(LOG_NUM)
+            self._init_log_to_write(log_num)
 
         stats_path = "logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0"
         hyperparams, stats_path = get_saved_hyperparams(stats_path,
@@ -84,7 +82,7 @@ class ModuleSelectEnv(gym.Env):
         for i in range(CONTROLS_PER_ACTION):
             start_time = time.time()
 
-            time.sleep(TIME_DELAY)
+            time.sleep(self.custom_delay / 1000)  # second
 
             if action == 0:  # lane tracker
                 self.num_lane_tracker += 1
@@ -213,7 +211,7 @@ class ModuleSelectEnv(gym.Env):
                                     "one frame processing time mean (ms)",
                                     "one control time mean (ms)",
                                     "controls per second",
-                                    "time sleep per step " + str(TIME_DELAY),
+                                    "time sleep per step " + str(self.custom_delay),
                                     "controls per action " + str(CONTROLS_PER_ACTION),
                                     "EM mode " + str(EMERGENCY_MODE),
                                     ])

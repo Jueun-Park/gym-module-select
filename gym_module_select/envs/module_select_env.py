@@ -53,17 +53,18 @@ class ModuleSelectEnv(gym.Env):
             self._init_log_to_write(LOG_NUM)
 
         stats_path = "logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0"
-        hyperparams, stats_path = get_saved_hyperparams(
-            stats_path, norm_reward=False)
+        hyperparams, stats_path = get_saved_hyperparams(stats_path,
+                                                    norm_reward=False)
         hyperparams['vae_path'] = "logs/vae-level-0-dim-32.pkl"
-        self.inner_env = create_test_env(
-            stats_path=stats_path, seed=0, log_dir="logs", hyperparams=hyperparams)
+        self.inner_env = create_test_env(stats_path=stats_path,
+                                        seed=0,
+                                        log_dir="logs",
+                                        hyperparams=hyperparams)
 
         self.detector = LaneDetector()
 
-        algo = "sac"
         model_path = "logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0.pkl"
-        self.model = ALGOS[algo].load(model_path)
+        self.model = ALGOS["sac"].load(model_path)
 
         if self.continuous:
             # the probability of selection of end-to-end module
@@ -93,21 +94,19 @@ class ModuleSelectEnv(gym.Env):
                 inner_action = [[steer, speed]]
 
                 check_processing_time(start_time, self.processing_times)
-                
-                self.inner_obs, reward, done, infos = self.inner_env.step(
-                    inner_action)
+                self.inner_obs, reward, done, infos = self.inner_env.step(inner_action)
             elif action == 1:  # end-to-end agent
                 self.num_end_to_end += 1
-                inner_action, _ = self.model.predict(
-                    self.inner_obs, deterministic=True)
+                inner_action, _ = self.model.predict(self.inner_obs,
+                                                    deterministic=True)
                 # Clip Action to avoid out of bound errors
                 if isinstance(self.inner_env.action_space, gym.spaces.Box):
-                    inner_action = np.clip(inner_action, self.inner_env.action_space.low,
-                                        self.inner_env.action_space.high)
+                    inner_action = np.clip(inner_action,
+                                            self.inner_env.action_space.low,
+                                            self.inner_env.action_space.high)
+
                 check_processing_time(start_time, self.processing_times)
-                
-                self.inner_obs, reward, done, infos = self.inner_env.step(
-                    inner_action)
+                self.inner_obs, reward, done, infos = self.inner_env.step(inner_action)
             else:
                 print("action error")
 
@@ -121,7 +120,7 @@ class ModuleSelectEnv(gym.Env):
                 pass
 
             self.original_reward += reward[0]
-            time_penalty = np.log(self.processing_times[-1]*50 + 1) * PENALTY_WEIGHT   # TODO
+            time_penalty = np.log(self.processing_times[-1]*50 + 1) * PENALTY_WEIGHT
             reward_sum += reward[0] - time_penalty
 
             self.ep_len += 1
@@ -129,7 +128,8 @@ class ModuleSelectEnv(gym.Env):
             if done:
                 break
 
-        self.driving_score_percent = np.max((self.inner_env.envs[0].env.viewer.handler.driving_score / 10, self.driving_score_percent))
+        self.driving_score_percent = np.max((self.inner_env.envs[0].env.viewer.handler.driving_score / 10,
+                                                self.driving_score_percent))
         self.running_reward += reward_sum
         return infos[0]['encoded_obs'], reward_sum, done, infos[0]
 

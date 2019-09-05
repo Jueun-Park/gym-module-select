@@ -10,7 +10,7 @@ from stable_baselines import SAC
 
 def init_parse_argument():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--model', help='model to load', type=str, default='sac-models-190903-td4/sac-model_34000.pkl')
+    parser.add_argument('-m', '--model', help='model to load', type=str, default='train/sac-models-190903-td4/sac-model_34000.pkl')
     args = parser.parse_args()
     return args
 

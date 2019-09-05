@@ -8,7 +8,7 @@ from stable_baselines.common.vec_env import DummyVecEnv
 
 def init_parse_argument():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--delay', help='custom dealy', type=int, default=0)
+    parser.add_argument('-d', '--delay', help='custom delay', type=int, default=0)
     args = parser.parse_args()
     return args
 

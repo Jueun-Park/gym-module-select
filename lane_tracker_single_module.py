@@ -20,7 +20,7 @@ env = DummyVecEnv([lambda: env])
 num_done = 0
 try:
     obs = env.reset()
-    while num_done < 2:
+    while num_done < 10:
         action = [0]
         obs, rewards, dones, info = env.step(action)
         env.render()

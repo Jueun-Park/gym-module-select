@@ -4,7 +4,7 @@ import gym_module_select
 from stable_baselines.deepq.policies import MlpPolicy
 from stable_baselines import DQN
 
-env = gym.make('ModuleSelect-v0')
+env = gym.make('ModuleSelect-v1')
 
 model = DQN(
     env=env,

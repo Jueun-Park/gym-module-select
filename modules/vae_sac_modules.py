@@ -11,8 +11,8 @@ class VAESACModule:
         self.model = model
         self.delay_weight = delay_weight
 
-    def predict(self, obs):
-        self._add_delay_from_distribution(obs[-1])  # TODO:
+    def predict(self, obs, num_proc):
+        self._add_delay_from_distribution(num_proc)  # TODO:
         action, _ = self.model.predict(obs, deterministic=True)
         if isinstance(self.env.action_space, gym.spaces.Box):
             action = np.clip(action, self.env.action_space.low, self.env.action_space.high)

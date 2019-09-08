@@ -15,6 +15,6 @@ class VAESACModule:
         action, _ = self.model.predict(obs, deterministic=True)
         return action
 
-    def _add_delay_from_distribution(self):
+    def _add_delay_from_distribution(self, proc_state):
         # TODO: add delay
         pass

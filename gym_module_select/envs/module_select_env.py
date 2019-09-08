@@ -12,7 +12,7 @@ class ModuleSelectEnv(gym.Env):
     metadata = {'render.modes': ['human']}
     continuous = False
 
-    def __init__(self, log_num=4, custom_delay=0):
+    def __init__(self):
         super(ModuleSelectEnv, self).__init__()
 
         stats_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0"
@@ -47,10 +47,10 @@ class ModuleSelectEnv(gym.Env):
                                             dtype=np.float32)
 
     def step(self, action):
+        # TODO:
         if self.continuous:
             action = softmax(action)
             action = int(np.random.choice(self.num_modules, 1, p=action))
-        # TODO:
         if action == 0:
             inner_action = self.module0.predict(self.inner_obs)
         elif action == 1:
@@ -60,7 +60,7 @@ class ModuleSelectEnv(gym.Env):
         else:
             print("action error")
         self.inner_obs, reward, done, infos = self.inner_env.step(inner_action)
-        return
+        return infos[0]['encoded_obs'], reward, done, infos[0]
 
     def reset(self):
         # TODO:

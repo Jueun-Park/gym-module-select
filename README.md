@@ -6,18 +6,12 @@ Gym environment for the autonomous car control module selector based on the rein
 
 ### Observation
 
-Raw image from the cam which see the front of the car. The shape is `(80, 160, 3)`.
 
 ### Action
 
-* `0` to select default lane tracking module
-* `1` to select SAC RL agent module
 
 ### Reward
 
-`(original env reward) - (one frame processing time (ms))`
-
-> `original env reward`: Please refer the section that name is _Reward Function: Go Fast but Stay on the Track!_ in [araffin's blog post](https://towardsdatascience.com/learning-to-drive-smoothly-in-minutes-450a7cdb35f4)
 
 ## Credits
 

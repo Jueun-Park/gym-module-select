@@ -8,8 +8,8 @@ import numpy as np
 from gym import spaces
 from gym.utils import seeding
 
-from config import INPUT_DIM, MIN_STEERING, MAX_STEERING, JERK_REWARD_WEIGHT, MAX_STEERING_DIFF
-from gym_module_select.core.donkey_proc import DonkeyUnityProcess
+from modules.config import INPUT_DIM, MIN_STEERING, MAX_STEERING, JERK_REWARD_WEIGHT, MAX_STEERING_DIFF
+from modules.gym_vae_donkey.core.donkey_proc import DonkeyUnityProcess
 from .donkey_sim import DonkeyUnitySimContoller
 
 

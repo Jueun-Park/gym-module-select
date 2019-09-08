@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 from joblib import Parallel, delayed
 
-from config import IMAGE_WIDTH, IMAGE_HEIGHT, ROI
+from modules.config import IMAGE_WIDTH, IMAGE_HEIGHT, ROI
 
 
 def preprocess_input(x, mode="rl"):

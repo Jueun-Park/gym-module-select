@@ -15,7 +15,7 @@ def init_parse_argument():
 
 args = init_parse_argument()
 
-env = gym.make('ModuleSelect-v0', log_num=1, custom_delay=args.delay)
+env = gym.make('ModuleSelect-v0', log_num=4, custom_delay=args.delay)
 env = DummyVecEnv([lambda: env])
 num_done = 0
 try:

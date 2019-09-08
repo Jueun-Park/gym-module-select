@@ -10,10 +10,10 @@ from threading import Thread
 import numpy as np
 from PIL import Image
 
-from config import INPUT_DIM, ROI, THROTTLE_REWARD_WEIGHT, MAX_THROTTLE, MIN_THROTTLE, \
+from modules.config import INPUT_DIM, ROI, THROTTLE_REWARD_WEIGHT, MAX_THROTTLE, MIN_THROTTLE, \
     REWARD_CRASH, CRASH_SPEED_WEIGHT
-from gym_module_select.core.fps import FPSTimer
-from gym_module_select.core.tcp_server import IMesgHandler, SimServer
+from modules.gym_vae_donkey.core.fps import FPSTimer
+from modules.gym_vae_donkey.core.tcp_server import IMesgHandler, SimServer
 
 
 class DonkeyUnitySimContoller:

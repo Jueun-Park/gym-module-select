@@ -9,7 +9,7 @@ import gym
 import numpy as np
 from stable_baselines.common import set_global_seeds
 
-from config import ENV_ID
+from modules.config import ENV_ID
 from utils.utils import ALGOS, create_test_env, get_latest_run_id, get_saved_hyperparams
 
 import cv2

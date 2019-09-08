@@ -17,10 +17,10 @@ from stable_baselines.common.vec_env import DummyVecEnv, VecNormalize, \
 from stable_baselines.sac.policies import FeedForwardPolicy as SACPolicy
 from stable_baselines.ddpg.policies import FeedForwardPolicy as DDPGPolicy
 
-from algos import DDPG, SAC, PPO2
-from gym_module_select.envs.vae_env import DonkeyVAEEnv
-from vae.controller import VAEController
-from config import MIN_THROTTLE, MAX_THROTTLE, MAX_CTE_ERROR, LEVEL, FRAME_SKIP, \
+from modules.algos import DDPG, SAC, PPO2
+from modules.gym_vae_donkey.envs.vae_env import DonkeyVAEEnv
+from modules.vae.controller import VAEController
+from modules.config import MIN_THROTTLE, MAX_THROTTLE, MAX_CTE_ERROR, LEVEL, FRAME_SKIP, \
     N_COMMAND_HISTORY, TEST_FRAME_SKIP
 
 ALGOS = {

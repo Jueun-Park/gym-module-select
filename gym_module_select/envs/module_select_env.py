@@ -8,7 +8,7 @@ import cv2
 from simple_pid import PID
 from modules.lane_detector import LaneDetector
 
-from gym_module_select.envs.vae_env import DonkeyVAEEnv
+from modules.gym_vae_donkey.envs.vae_env import DonkeyVAEEnv
 from utils.utils import create_test_env, get_saved_hyperparams, ALGOS
 
 
@@ -48,18 +48,18 @@ class ModuleSelectEnv(gym.Env):
         if self.save_log_flag:
             self._init_log_to_write(log_num)
 
-        stats_path = "logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0"
+        stats_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0"
         hyperparams, stats_path = get_saved_hyperparams(stats_path,
                                                     norm_reward=False)
-        hyperparams['vae_path'] = "logs/vae-level-0-dim-32.pkl"
+        hyperparams['vae_path'] = "modules/logs/vae-level-0-dim-32.pkl"
         self.inner_env = create_test_env(stats_path=stats_path,
                                         seed=0,
-                                        log_dir="logs",
+                                        log_dir="modules/logs",
                                         hyperparams=hyperparams)
 
         self.detector = LaneDetector()
 
-        model_path = "logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0.pkl"
+        model_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0.pkl"
         self.model = ALGOS["sac"].load(model_path)
 
         if self.continuous:

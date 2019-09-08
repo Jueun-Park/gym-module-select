@@ -4,7 +4,7 @@
 
 import numpy as np
 
-from config import ROI
+from modules.config import ROI
 from .model import ConvVAE
 from .data_loader import denormalize, preprocess_input
 

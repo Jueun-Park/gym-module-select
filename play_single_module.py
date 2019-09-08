@@ -1,28 +1,34 @@
-import numpy as np
+import argparse
 import gym
-from modules.vae_sac_modules import VAESACModule
-from utils.utils import create_test_env, get_saved_hyperparams, ALGOS
+import sys
+sys.path.append('.')
+import gym_module_select
+from stable_baselines.common.vec_env import DummyVecEnv
 
-# TODO: module_select_env.py 를 통해 단일 모듈을 실행시키는 스크립트
+
+NUM_SIMULATION = 10
+
+def init_parse_argument():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-m', '--module', help='module num', type=int, default=0)
+    args = parser.parse_args()
+    return args
 
 
-if __name__ == "__main__":
-    # test code
-    stats_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0"
-    hyperparams, stats_path = get_saved_hyperparams(stats_path, norm_reward=False)
-    hyperparams['vae_path'] = "modules/logs/vae-level-0-dim-32.pkl"
-    inner_env = create_test_env(stats_path=stats_path,
-                                seed=0,
-                                log_dir="modules/logs",
-                                hyperparams=hyperparams)
-    model_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0.pkl"
-    model = ALGOS["sac"].load(model_path)
+args = init_parse_argument()
 
-    module1 = VAESACModule(inner_env, model, 5)
+env = gym.make('ModuleSelect-v1')
+env = DummyVecEnv([lambda: env])
+num_done = 0
+try:
+    obs = env.reset()
+    while num_done < NUM_SIMULATION:
+        action = [args.module]
+        obs, rewards, dones, info = env.step(action)
+        env.render()
+        if dones[0]:
+            num_done += 1
+except:
+    pass
 
-    inner_obs = inner_env.reset()
-    for i in range(1000):
-        inner_action = module1.predict(inner_obs)
-        if isinstance(inner_env.action_space, gym.spaces.Box):
-            inner_action = np.clip(inner_action, inner_env.action_space.low, inner_env.action_space.high)
-        inner_obs, reward, done, infos = inner_env.step(inner_action)
+env.close()

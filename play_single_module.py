@@ -20,16 +20,15 @@ args = init_parse_argument()
 env = gym.make('ModuleSelect-v1')
 env = DummyVecEnv([lambda: env])
 num_done = 0
-# try:
-obs = env.reset()
-while num_done < NUM_SIMULATION:
-    action = [args.module]
-    obs, rewards, dones, info = env.step(action)
-    env.render()
-    if dones[0]:
-        num_done += 1
-# except Exception as e:
-#     print("play exception")
-#     print(e)
+try:
+    obs = env.reset()
+    while num_done < NUM_SIMULATION:
+        action = [args.module]
+        obs, rewards, dones, info = env.step(action)
+        env.render()
+        if dones[0]:
+            num_done += 1
+except KeyboardInterrupt:
+    pass
 
 env.close()

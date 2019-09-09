@@ -30,10 +30,10 @@ class ModuleSelectEnv(gym.Env):
         # TODO: add VAESACModules
         self.num_modules = 3
         self.module0 = VAESACModule(self.inner_env, self.model, 0)
-        self.module1 = VAESACModule(self.inner_env, self.model, 1)
-        self.module2 = VAESACModule(self.inner_env, self.model, 2)
+        self.module1 = VAESACModule(self.inner_env, self.model, 0.1)
+        self.module2 = VAESACModule(self.inner_env, self.model, 0.2)
 
-        self.num_proc = 0
+        self.num_proc = 3
 
         if self.continuous:
             # the probability of selection of end-to-end module
@@ -62,6 +62,12 @@ class ModuleSelectEnv(gym.Env):
         else:
             print("action error")
         self.inner_obs, reward, done, infos = self.inner_env.step(inner_action)
+        # TODO: make time term
+        time_term = 0
+        reward[0] += time_term
+        self.episode_reward += reward[0]
+        self.driving_score_percent = np.max((self.inner_env.envs[0].env.viewer.handler.driving_score / 10,
+                                             self.driving_score_percent))
         obs = np.concatenate((infos[0]['encoded_obs'], [[self.num_proc]]), 1)
         return obs, reward, done, infos[0]
 
@@ -70,9 +76,11 @@ class ModuleSelectEnv(gym.Env):
         self.inner_obs = self.inner_env.reset()
         self._, _, _, infos = self.inner_env.envs[0].env.observe()
         self._print_log()
-        print(infos['encoded_obs'])
+
+        self.driving_score_percent = 0
+        self.episode_reward = 0
+
         obs = np.concatenate((infos['encoded_obs'], [[self.num_proc]]), 1)
-        print(obs)
         return obs
 
     def render(self, mode='human', close=False):
@@ -85,6 +93,11 @@ class ModuleSelectEnv(gym.Env):
 
     def _print_log(self):
         print("=== Reset ===")
+        try:
+            print("Driving Score (%): {:.2f}".format(self.driving_score_percent))
+            print("Episode Reward: {:.2f}".format(self.episode_reward))
+        except AttributeError:
+            pass
 
     def _simulate_num_proc(self):
         # TODO: make add_term from normal distribution

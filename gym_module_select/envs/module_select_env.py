@@ -5,6 +5,7 @@ import numpy as np
 import time
 
 from modules.vae_sac_modules import VAESACModule
+from modules.lane_tracker import LaneTracker
 from utils.utils import create_test_env, get_saved_hyperparams, ALGOS
 
 PENALTY_WEIGHT = 0.5
@@ -31,12 +32,12 @@ class ModuleSelectEnv(gym.Env):
         model_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0.pkl"
         self.model = ALGOS["sac"].load(model_path)
 
-        self.num_modules = 4
+        self.num_modules = 5
         self.module0 = VAESACModule(self.inner_env, self.model, 0.05)
         self.module1 = VAESACModule(self.inner_env, self.model, 0.1)
         self.module2 = VAESACModule(self.inner_env, self.model, 0.2)
         self.module3 = VAESACModule(self.inner_env, self.model, 0.3)
-        # TODO: add lane_tracker module
+        self.lane_tracker = LaneTracker()
 
         if self.continuous:
             # the probability of selection of end-to-end module
@@ -51,6 +52,7 @@ class ModuleSelectEnv(gym.Env):
                                             dtype=np.float32)
 
     def step(self, action):
+        print("action:", action)
         # TODO:
         if self.continuous:
             action = softmax(action)
@@ -66,9 +68,15 @@ class ModuleSelectEnv(gym.Env):
                 inner_action = self.module2.predict(self.inner_obs, self.num_proc)
             elif action == 3:
                 inner_action = self.module3.predict(self.inner_obs, self.num_proc)
+            elif action == 4:
+                inner_action = self.lane_tracker.predict(self.raw_obs)
             else:
                 print("action error")
             self.inner_obs, reward, done, infos = self.inner_env.step(inner_action)
+            if self.first_flag:
+                self.first_flag = False
+            else:
+                self.raw_obs = infos[0]['raw_obs']
             # TODO: make time penalty term
             time_penalty = 0
             # time_penalty = np.log(self.processing_times[-1]*50 + 1) * PENALTY_WEIGHT
@@ -85,6 +93,8 @@ class ModuleSelectEnv(gym.Env):
     def reset(self):
         self.inner_obs = self.inner_env.reset()
         self._, _, _, infos = self.inner_env.envs[0].env.observe()
+        self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()  # first observe
+        self.first_flag = True
         self._print_log()
 
         self.num_proc = INIT_NUM_PROC

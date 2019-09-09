@@ -20,10 +20,10 @@ args = init_parse_argument()
 env = gym.make('ModuleSelect-v1')
 env = DummyVecEnv([lambda: env])
 num_done = 0
+action = [args.module]
 try:
     obs = env.reset()
     while num_done < NUM_SIMULATION:
-        action = [args.module]
         obs, rewards, dones, info = env.step(action)
         env.render()
         if dones[0]:

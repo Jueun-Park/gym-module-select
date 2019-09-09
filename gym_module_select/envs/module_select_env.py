@@ -7,6 +7,9 @@ import time
 from modules.vae_sac_modules import VAESACModule
 from utils.utils import create_test_env, get_saved_hyperparams, ALGOS
 
+PENALTY_WEIGHT = 0.5
+INIT_NUM_PROC = 0
+
 
 class ModuleSelectEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -33,8 +36,6 @@ class ModuleSelectEnv(gym.Env):
         self.module1 = VAESACModule(self.inner_env, self.model, 0.1)
         self.module2 = VAESACModule(self.inner_env, self.model, 0.2)
 
-        self.num_proc = 3
-
         if self.continuous:
             # the probability of selection of end-to-end module
             self.action_space = spaces.Box(low=-1, high=1, shape=(self.num_modules, ))
@@ -48,6 +49,7 @@ class ModuleSelectEnv(gym.Env):
                                             dtype=np.float32)
 
     def step(self, action):
+        print(self.num_proc)
         # TODO:
         if self.continuous:
             action = softmax(action)
@@ -62,9 +64,10 @@ class ModuleSelectEnv(gym.Env):
         else:
             print("action error")
         self.inner_obs, reward, done, infos = self.inner_env.step(inner_action)
-        # TODO: make time term
-        time_term = 0
-        reward[0] += time_term
+        # TODO: make time penalty term
+        time_penalty = 0
+        # time_penalty = np.log(self.processing_times[-1]*50 + 1) * PENALTY_WEIGHT
+        reward[0] += time_penalty
         self.episode_reward += reward[0]
         self.driving_score_percent = np.max((self.inner_env.envs[0].env.viewer.handler.driving_score / 10,
                                              self.driving_score_percent))
@@ -77,6 +80,7 @@ class ModuleSelectEnv(gym.Env):
         self._, _, _, infos = self.inner_env.envs[0].env.observe()
         self._print_log()
 
+        self.num_proc = INIT_NUM_PROC
         self.driving_score_percent = 0
         self.episode_reward = 0
 
@@ -100,9 +104,10 @@ class ModuleSelectEnv(gym.Env):
             pass
 
     def _simulate_num_proc(self):
-        # TODO: make add_term from normal distribution
-        add_term = 0
+        add_term = np.random.normal(loc=0, scale=1)
+        add_term = round(add_term)
         self.num_proc += add_term
+        self.num_proc = np.clip(self.num_proc, 0, np.inf)
         return self.num_proc
 
 

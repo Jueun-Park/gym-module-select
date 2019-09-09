@@ -9,7 +9,7 @@ from modules.vae_sac_modules import VAESACModule
 from modules.lane_tracker import LaneTracker
 from utils.utils import create_test_env, get_saved_hyperparams, ALGOS
 
-PENALTY_WEIGHT = 0.5
+PENALTY_WEIGHT = 0.1
 INIT_NUM_PROC = 0
 CONTROLS_PER_ACTION = 10
 
@@ -18,13 +18,28 @@ directory_names = {0: "0+",
                    1: "1+",
                    2: "2+",
                    3: "3+",
-                   4: "4+lane-tracker",
+                   4: "4+",
                    }
 
-delay_weights = {0: 1,
-                 1: 1.5,
-                 2: 2,
-                 3: 2.5,
+"""
+d ~ Exp(1/num_proc(ms))
+t = d * weight
+bigger w, bigger std of response time
+"""
+delay_weights = {0: 0.5,
+                 1: 1.0,
+                 2: 1.5,
+                 3: 2.0,
+                 4: 2.5,
+                 }
+"""
+wait_time = t + static_term
+bigger add term, bigger mean of response time
+"""
+static_terms = {0: 0.03,
+                 1: 0.02,
+                 2: 0.01,
+                 3: 0.005,
                  4: 0,
                  }
 
@@ -52,11 +67,11 @@ class ModuleSelectEnv(gym.Env):
         self.model = ALGOS["sac"].load(model_path)
 
         self.num_modules = 5
-        self.module0 = VAESACModule(self.inner_env, self.model, delay_weights[0])
-        self.module1 = VAESACModule(self.inner_env, self.model, delay_weights[1])
-        self.module2 = VAESACModule(self.inner_env, self.model, delay_weights[2])
-        self.module3 = VAESACModule(self.inner_env, self.model, delay_weights[3])
-        self.lane_tracker = LaneTracker()
+        self.module0 = VAESACModule(self.inner_env, self.model, delay_weights[0], static_terms[0])
+        self.module1 = VAESACModule(self.inner_env, self.model, delay_weights[1], static_terms[1])
+        self.module2 = VAESACModule(self.inner_env, self.model, delay_weights[2], static_terms[2])
+        self.module3 = VAESACModule(self.inner_env, self.model, delay_weights[3], static_terms[3])
+        self.module4 = VAESACModule(self.inner_env, self.model, delay_weights[4], static_terms[4])
 
         if self.continuous:
             # the probability of selection of end-to-end module
@@ -92,7 +107,7 @@ class ModuleSelectEnv(gym.Env):
                 inner_action = self.module3.predict(self.inner_obs, self.num_proc)
                 check_time(start_time, self.module_response_times)
             elif action == 4:
-                inner_action = self.lane_tracker.predict(self.raw_obs, self.num_proc)
+                inner_action = self.module4.predict(self.inner_obs, self.num_proc)
                 check_time(start_time, self.module_response_times)
             else:
                 print("action error")
@@ -101,9 +116,9 @@ class ModuleSelectEnv(gym.Env):
                 self.first_flag = False
             else:
                 self.raw_obs = infos[0]['raw_obs']
-            # TODO: make time penalty term
             time_penalty = 0
-            # time_penalty = np.log(self.processing_times[-1]*50 + 1) * PENALTY_WEIGHT
+            # time_penalty = np.log(self.module_response_times[-1]*50 + 1) * PENALTY_WEIGHT
+            # time_penalty = np.clip(time_penalty, 0, reward[0])
             reward_sum += reward[0] - time_penalty
             if done:
                 break
@@ -149,7 +164,7 @@ class ModuleSelectEnv(gym.Env):
         root_dir = os.path.abspath(os.path.join(root_dir, ".."))
         file_name = root_dir + "/result/" + directory_names[simulate_num] + str(delay_weights[simulate_num]) + "/"
         os.makedirs(file_name, exist_ok=True)
-        file_name += directory_names[simulate_num] + "-" + timestr + ".csv"
+        file_name += directory_names[simulate_num] + timestr + ".csv"
         print(">>> save csv log file: ", file_name)
         self.csv_file = open(file_name, "w", newline="")
         self.csv_writer = csv.writer(self.csv_file)

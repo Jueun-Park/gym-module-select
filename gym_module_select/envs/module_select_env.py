@@ -9,6 +9,7 @@ from utils.utils import create_test_env, get_saved_hyperparams, ALGOS
 
 PENALTY_WEIGHT = 0.5
 INIT_NUM_PROC = 0
+CONTROLS_PER_ACTION = 10
 
 
 class ModuleSelectEnv(gym.Env):
@@ -30,11 +31,12 @@ class ModuleSelectEnv(gym.Env):
         model_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0.pkl"
         self.model = ALGOS["sac"].load(model_path)
 
-        # TODO: add VAESACModules
-        self.num_modules = 3
-        self.module0 = VAESACModule(self.inner_env, self.model, 0)
+        self.num_modules = 4
+        self.module0 = VAESACModule(self.inner_env, self.model, 0.05)
         self.module1 = VAESACModule(self.inner_env, self.model, 0.1)
         self.module2 = VAESACModule(self.inner_env, self.model, 0.2)
+        self.module3 = VAESACModule(self.inner_env, self.model, 0.3)
+        # TODO: add lane_tracker module
 
         if self.continuous:
             # the probability of selection of end-to-end module
@@ -49,33 +51,38 @@ class ModuleSelectEnv(gym.Env):
                                             dtype=np.float32)
 
     def step(self, action):
-        print(self.num_proc)
         # TODO:
         if self.continuous:
             action = softmax(action)
             action = int(np.random.choice(self.num_modules, 1, p=action))
+        reward_sum = 0
         self.num_proc = self._simulate_num_proc()
-        if action == 0:
-            inner_action = self.module0.predict(self.inner_obs, self.num_proc)
-        elif action == 1:
-            inner_action = self.module1.predict(self.inner_obs, self.num_proc)
-        elif action == 2:
-            inner_action = self.module2.predict(self.inner_obs, self.num_proc)
-        else:
-            print("action error")
-        self.inner_obs, reward, done, infos = self.inner_env.step(inner_action)
-        # TODO: make time penalty term
-        time_penalty = 0
-        # time_penalty = np.log(self.processing_times[-1]*50 + 1) * PENALTY_WEIGHT
-        reward[0] += time_penalty
-        self.episode_reward += reward[0]
+        for _ in range(CONTROLS_PER_ACTION):
+            if action == 0:
+                inner_action = self.module0.predict(self.inner_obs, self.num_proc)
+            elif action == 1:
+                inner_action = self.module1.predict(self.inner_obs, self.num_proc)
+            elif action == 2:
+                inner_action = self.module2.predict(self.inner_obs, self.num_proc)
+            elif action == 3:
+                inner_action = self.module3.predict(self.inner_obs, self.num_proc)
+            else:
+                print("action error")
+            self.inner_obs, reward, done, infos = self.inner_env.step(inner_action)
+            # TODO: make time penalty term
+            time_penalty = 0
+            # time_penalty = np.log(self.processing_times[-1]*50 + 1) * PENALTY_WEIGHT
+            reward_sum += reward[0] - time_penalty
+            if done:
+                break
+
+        self.episode_reward += reward_sum
         self.driving_score_percent = np.max((self.inner_env.envs[0].env.viewer.handler.driving_score / 10,
                                              self.driving_score_percent))
         obs = np.concatenate((infos[0]['encoded_obs'], [[self.num_proc]]), 1)
-        return obs, reward, done, infos[0]
+        return obs, reward_sum, done, infos[0]
 
     def reset(self):
-        # TODO:
         self.inner_obs = self.inner_env.reset()
         self._, _, _, infos = self.inner_env.envs[0].env.observe()
         self._print_log()
@@ -104,11 +111,11 @@ class ModuleSelectEnv(gym.Env):
             pass
 
     def _simulate_num_proc(self):
-        add_term = np.random.normal(loc=0, scale=1)
+        add_term = np.random.normal(loc=0, scale=0.9)
         add_term = round(add_term)
         self.num_proc += add_term
         self.num_proc = np.clip(self.num_proc, 0, np.inf)
-        return self.num_proc
+        return int(self.num_proc)
 
 
 class ModuleSelectEnvContinuous(ModuleSelectEnv):

@@ -92,7 +92,7 @@ class ModuleSelectEnv(gym.Env):
                 inner_action = self.module3.predict(self.inner_obs, self.num_proc)
                 check_time(start_time, self.module_response_times)
             elif action == 4:
-                inner_action = self.lane_tracker.predict(self.raw_obs)
+                inner_action = self.lane_tracker.predict(self.raw_obs, self.num_proc)
                 check_time(start_time, self.module_response_times)
             else:
                 print("action error")

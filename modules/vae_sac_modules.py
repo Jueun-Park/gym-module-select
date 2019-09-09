@@ -20,4 +20,7 @@ class VAESACModule:
         return action
 
     def _add_delay(self, proc_state):
-        time.sleep(proc_state/100 + self.delay_weight)
+        proc_state /= 100
+        wait_time = np.random.exponential(scale=proc_state)
+        wait_time *= self.delay_weight
+        time.sleep(wait_time)

@@ -13,12 +13,11 @@ class VAESACModule:
         self.delay_weight = delay_weight
 
     def predict(self, obs, num_proc):
-        self._add_delay(num_proc)  # TODO:
+        self._add_delay(num_proc)
         action, _ = self.model.predict(obs, deterministic=True)
         if isinstance(self.env.action_space, gym.spaces.Box):
             action = np.clip(action, self.env.action_space.low, self.env.action_space.high)
         return action
 
     def _add_delay(self, proc_state):
-        # TODO: add delay
-        time.sleep(proc_state/10 + self.delay_weight)
+        time.sleep(proc_state/100 + self.delay_weight)

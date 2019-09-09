@@ -19,6 +19,7 @@ directory_names = {0: "0+",
                    2: "2+",
                    3: "3+",
                    4: "4+",
+                   5: "random-agent"
                    }
 
 """
@@ -31,6 +32,7 @@ delay_weights = {0: 0.5,
                  2: 1.5,
                  3: 2.0,
                  4: 2.5,
+                 5: "",
                  }
 """
 wait_time = t + static_term
@@ -41,6 +43,7 @@ static_terms = {0: 0.03,
                  2: 0.01,
                  3: 0.005,
                  4: 0,
+                 5: "",
                  }
 
 class ModuleSelectEnv(gym.Env):
@@ -95,18 +98,23 @@ class ModuleSelectEnv(gym.Env):
         for _ in range(CONTROLS_PER_ACTION):
             start_time = time.time()
             if action == 0:
+                self.num_use[0] += 1
                 inner_action = self.module0.predict(self.inner_obs, self.num_proc)
                 check_time(start_time, self.module_response_times)
             elif action == 1:
+                self.num_use[1] += 1
                 inner_action = self.module1.predict(self.inner_obs, self.num_proc)
                 check_time(start_time, self.module_response_times)
             elif action == 2:
+                self.num_use[2] += 1
                 inner_action = self.module2.predict(self.inner_obs, self.num_proc)
                 check_time(start_time, self.module_response_times)
             elif action == 3:
+                self.num_use[3] += 1
                 inner_action = self.module3.predict(self.inner_obs, self.num_proc)
                 check_time(start_time, self.module_response_times)
             elif action == 4:
+                self.num_use[4] += 1                
                 inner_action = self.module4.predict(self.inner_obs, self.num_proc)
                 check_time(start_time, self.module_response_times)
             else:
@@ -144,6 +152,9 @@ class ModuleSelectEnv(gym.Env):
         self.driving_score_percent = 0
         self.episode_reward = 0
         self.module_response_times = deque()
+        self.num_use = {}
+        for i in range(5):
+            self.num_use[i] = 0
 
         obs = np.concatenate((infos['encoded_obs'], [[self.num_proc]]), 1)
         return obs
@@ -162,7 +173,9 @@ class ModuleSelectEnv(gym.Env):
         timestr = time.strftime("%Y%m%d-%H%M%S")
         root_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
         root_dir = os.path.abspath(os.path.join(root_dir, ".."))
-        file_name = root_dir + "/result/" + directory_names[simulate_num] + str(delay_weights[simulate_num]) + "/"
+        file_name = root_dir + "/result/" + directory_names[simulate_num]
+                                            + str(delay_weights[simulate_num])
+                                            + str(static_terms[simulate_num]) + "/"
         os.makedirs(file_name, exist_ok=True)
         file_name += directory_names[simulate_num] + timestr + ".csv"
         print(">>> save csv log file: ", file_name)
@@ -172,14 +185,21 @@ class ModuleSelectEnv(gym.Env):
                                   "episode reward",
                                   "response time mean",
                                   "response time std",
+                                  "usage ratio 0",
+                                  "usage ratio 1",
+                                  "usage ratio 2",
+                                  "usage ratio 3",
+                                  "usage ratio 4",
                                   ])
     
     def _write_log(self):
         try:
+            ratios = dict_ratio(self.num_use, self.num_modules)
             self.csv_writer.writerow([self.driving_score_percent,
                                       self.episode_reward,
                                       np.mean(self.module_response_times),
                                       np.std(self.module_response_times),
+                                      ratios[0], ratios[1], ratios[2], ratios[3], ratios[4],
                                     ])
             self.csv_file.flush()
         except:
@@ -192,6 +212,9 @@ class ModuleSelectEnv(gym.Env):
             print("Episode Reward: {:.2f}".format(self.episode_reward))
             print("Response Time Mean: {:.2f}".format(np.mean(self.module_response_times)))
             print("Response Time std: {:.2f}".format(np.std(self.module_response_times)))
+            ratios = dict_ratio(self.num_use, self.num_modules)
+            print("Usage Ratio: {:.2f} {:.2f} {:.2f} {:.2f} {:.2f}".format(
+                ratios[0], ratios[1], ratios[2], ratios[3], ratios[4]))
         except AttributeError:
             pass
 
@@ -219,3 +242,12 @@ def check_time(start_time, time_deque: deque):
     end_time = time.time()
     processing_time = end_time - start_time
     time_deque.append(processing_time * 1000)  # ms
+
+def dict_ratio(dict_in, num):
+    total = 0
+    for i in range(num):
+        total += dict_in[i]
+    result = []
+    for i in range(num):
+        result.append(dict_in[i] / total)
+    return result

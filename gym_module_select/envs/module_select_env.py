@@ -173,9 +173,9 @@ class ModuleSelectEnv(gym.Env):
         timestr = time.strftime("%Y%m%d-%H%M%S")
         root_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
         root_dir = os.path.abspath(os.path.join(root_dir, ".."))
-        file_name = root_dir + "/result/" + directory_names[simulate_num]
-                                            + str(delay_weights[simulate_num])
-                                            + str(static_terms[simulate_num]) + "/"
+        file_name = root_dir + "/result/" + directory_names[simulate_num] + \
+                                            str(delay_weights[simulate_num]) + "+" + \
+                                            str(static_terms[simulate_num]) + "/"
         os.makedirs(file_name, exist_ok=True)
         file_name += directory_names[simulate_num] + timestr + ".csv"
         print(">>> save csv log file: ", file_name)

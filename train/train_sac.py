@@ -12,7 +12,7 @@ from stable_baselines.bench import Monitor
 from stable_baselines.results_plotter import load_results, ts2xy
 from stable_baselines import SAC
 
-TIMESTEPS = 10000001
+TIMESTEPS = int(1e8) + 1
 
 
 def init_parse_argument():
@@ -21,7 +21,6 @@ def init_parse_argument():
     parser.add_argument('-i', '--id', help='nickname of the train', type=str, default=timestr)
     args = parser.parse_args()
     return args
-
 
 
 best_mean_reward = -numpy.inf
@@ -60,7 +59,9 @@ if __name__ == "__main__":
     os.makedirs(log_directory, exist_ok=True)
     os.makedirs(model_directory, exist_ok=True)
 
-    env = gym.make('ModuleSelectContinuous-v0')
+    env = gym.make('ModuleSelectContinuous-v1',
+                    verbose=1,
+                    )
     env = Monitor(env, log_directory, allow_early_resets=True)
     env = DummyVecEnv([lambda: env])
 
@@ -69,12 +70,12 @@ if __name__ == "__main__":
         policy=MlpPolicy,
         verbose=1,
         tensorboard_log="./sac_tensorboard/",
-        batch_size=1024,
+        batch_size=512,
     )
     try:
         model.learn(
             total_timesteps=TIMESTEPS,
             callback=callback
         )
-    except:
+    except KeyboardInterrupt:
         env.envs[0].env.close()

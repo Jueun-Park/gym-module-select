@@ -3,6 +3,7 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 import numpy as np
 import time
+from collections import deque
 
 from modules.vae_sac_modules import VAESACModule
 from modules.lane_tracker import LaneTracker
@@ -20,10 +21,10 @@ directory_names = {0: "0+",
                    4: "4+lane-tracker",
                    }
 
-delay_weights = {0: 0.05,
-                 1: 0.1,
-                 2: 0.2,
-                 3: 0.3,
+delay_weights = {0: 1,
+                 1: 1.5,
+                 2: 2,
+                 3: 2.5,
                  4: 0,
                  }
 
@@ -77,16 +78,22 @@ class ModuleSelectEnv(gym.Env):
         reward_sum = 0
         self.num_proc = self._simulate_num_proc()
         for _ in range(CONTROLS_PER_ACTION):
+            start_time = time.time()
             if action == 0:
                 inner_action = self.module0.predict(self.inner_obs, self.num_proc)
+                check_time(start_time, self.module_response_times)
             elif action == 1:
                 inner_action = self.module1.predict(self.inner_obs, self.num_proc)
+                check_time(start_time, self.module_response_times)
             elif action == 2:
                 inner_action = self.module2.predict(self.inner_obs, self.num_proc)
+                check_time(start_time, self.module_response_times)
             elif action == 3:
                 inner_action = self.module3.predict(self.inner_obs, self.num_proc)
+                check_time(start_time, self.module_response_times)
             elif action == 4:
                 inner_action = self.lane_tracker.predict(self.raw_obs)
+                check_time(start_time, self.module_response_times)
             else:
                 print("action error")
             self.inner_obs, reward, done, infos = self.inner_env.step(inner_action)
@@ -121,6 +128,7 @@ class ModuleSelectEnv(gym.Env):
         self.num_proc = INIT_NUM_PROC
         self.driving_score_percent = 0
         self.episode_reward = 0
+        self.module_response_times = deque()
 
         obs = np.concatenate((infos['encoded_obs'], [[self.num_proc]]), 1)
         return obs
@@ -147,12 +155,16 @@ class ModuleSelectEnv(gym.Env):
         self.csv_writer = csv.writer(self.csv_file)
         self.csv_writer.writerow(["driving score (%)",
                                   "episode reward",
+                                  "response time mean",
+                                  "response time std",
                                   ])
     
     def _write_log(self):
         try:
             self.csv_writer.writerow([self.driving_score_percent,
                                       self.episode_reward,
+                                      np.mean(self.module_response_times),
+                                      np.std(self.module_response_times),
                                     ])
             self.csv_file.flush()
         except:
@@ -163,6 +175,8 @@ class ModuleSelectEnv(gym.Env):
         try:
             print("Driving Score (%): {:.2f}".format(self.driving_score_percent))
             print("Episode Reward: {:.2f}".format(self.episode_reward))
+            print("Response Time Mean: {:.2f}".format(np.mean(self.module_response_times)))
+            print("Response Time std: {:.2f}".format(np.std(self.module_response_times)))
         except AttributeError:
             pass
 
@@ -184,3 +198,9 @@ def softmax(a):
     sum_exp_a = np.sum(exp_a)
     y = exp_a / sum_exp_a
     return y
+
+
+def check_time(start_time, time_deque: deque):
+    end_time = time.time()
+    processing_time = end_time - start_time
+    time_deque.append(processing_time * 1000)  # ms

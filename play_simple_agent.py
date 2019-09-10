@@ -6,7 +6,7 @@ import gym_module_select
 from stable_baselines.common.vec_env import DummyVecEnv
 
 
-NUM_SIMULATION = 25
+NUM_SIMULATION = 10
 
 def init_parse_argument():
     parser = argparse.ArgumentParser()

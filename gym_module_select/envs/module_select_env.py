@@ -27,6 +27,7 @@ directory_names = {0: "0+",
 d ~ Exp(1/num_proc(ms))
 t = d * weight
 bigger w, bigger std of response time
+std term
 """
 delay_weights = {0: 0.01,
                  1: 0.05,
@@ -39,15 +40,16 @@ delay_weights = {0: 0.01,
 """
 wait_time = t + static_term
 bigger add term, bigger mean of response time
+mean term
 """
-static_terms = {0: 0.02,
-                 1: 0.015,
-                 2: 0.01,
-                 3: 0.005,
-                 4: 0,
-                 5: "",
-                 6: "",
-                 }
+static_terms = {0: 0.045,
+                1: 0.04,
+                2: 0.035,
+                3: 0.0275,
+                4: 0.02,
+                5: "",
+                6: "",
+                }
 
 class ModuleSelectEnv(gym.Env):
     metadata = {'render.modes': ['human']}

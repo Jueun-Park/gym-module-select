@@ -42,10 +42,10 @@ wait_time = t + static_term
 bigger add term, bigger mean of response time
 mean term
 """
-static_terms = {0: 0.045,
-                1: 0.04,
-                2: 0.035,
-                3: 0.0275,
+static_terms = {0: 0.05,
+                1: 0.045,
+                2: 0.04,
+                3: 0.03,
                 4: 0.02,
                 5: "",
                 6: "",

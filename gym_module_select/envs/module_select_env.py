@@ -127,9 +127,9 @@ class ModuleSelectEnv(gym.Env):
                 self.first_flag = False
             else:
                 self.raw_obs = infos[0]['raw_obs']
-            time_penalty = 0
-            # time_penalty = np.log(self.module_response_times[-1]*50 + 1) * PENALTY_WEIGHT
-            # time_penalty = np.clip(time_penalty, 0, reward[0])
+            # time_penalty = 0
+            time_penalty = np.log(self.module_response_times[-1]*50 + 1) * PENALTY_WEIGHT
+            time_penalty = np.clip(time_penalty, 0, reward[0])
             reward_sum += reward[0] - time_penalty
             if done:
                 break

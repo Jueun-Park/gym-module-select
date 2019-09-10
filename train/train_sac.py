@@ -60,7 +60,7 @@ if __name__ == "__main__":
     os.makedirs(model_directory, exist_ok=True)
 
     env = gym.make('ModuleSelectContinuous-v1',
-                    verbose=1,
+                    verbose=0,
                     )
     env = Monitor(env, log_directory, allow_early_resets=True)
     env = DummyVecEnv([lambda: env])

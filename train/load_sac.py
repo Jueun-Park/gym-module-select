@@ -7,6 +7,8 @@ import argparse
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import SAC
 
+NUM_SIMULATION = 25
+
 
 def init_parse_argument():
     parser = argparse.ArgumentParser()
@@ -18,17 +20,23 @@ def init_parse_argument():
 args = init_parse_argument()
 model_name = os.path.abspath(args.model)
 
-env = gym.make('ModuleSelectContinuous-v0')
+env = gym.make('ModuleSelectContinuous-v1',
+                save_log_flag=True,
+                log_num=6,
+                )
 env = DummyVecEnv([lambda: env])
 model = SAC.load(model_name)
 
+num_done = 0
 try:
     obs = env.reset()
-    for i in range(10000):
+    while num_done < NUM_SIMULATION:
         action, _states = model.predict(obs)
         obs, rewards, dones, info = env.step(action)
         env.render()
-except:
+        if dones[0]:
+            num_done += 1
+except KeyboardInterrupt:
     pass
 
 env.close()

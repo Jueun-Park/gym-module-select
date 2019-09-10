@@ -19,7 +19,8 @@ directory_names = {0: "0+",
                    2: "2+",
                    3: "3+",
                    4: "4+",
-                   5: "random-agent"
+                   5: "random-agent",
+                   6: "sac-agent",
                    }
 
 """
@@ -33,6 +34,7 @@ delay_weights = {0: 0.5,
                  3: 2.0,
                  4: 2.5,
                  5: "",
+                 6: "",
                  }
 """
 wait_time = t + static_term
@@ -44,6 +46,7 @@ static_terms = {0: 0.03,
                  3: 0.005,
                  4: 0,
                  5: "",
+                 6: "",
                  }
 
 class ModuleSelectEnv(gym.Env):

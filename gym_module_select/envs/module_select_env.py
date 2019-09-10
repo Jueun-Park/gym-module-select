@@ -28,11 +28,11 @@ d ~ Exp(1/num_proc(ms))
 t = d * weight
 bigger w, bigger std of response time
 """
-delay_weights = {0: 0.5,
-                 1: 1.0,
-                 2: 1.5,
-                 3: 2.0,
-                 4: 2.5,
+delay_weights = {0: 0.01,
+                 1: 0.05,
+                 2: 0.1,
+                 3: 0.25,
+                 4: 0.5,
                  5: "",
                  6: "",
                  }
@@ -40,8 +40,8 @@ delay_weights = {0: 0.5,
 wait_time = t + static_term
 bigger add term, bigger mean of response time
 """
-static_terms = {0: 0.03,
-                 1: 0.02,
+static_terms = {0: 0.02,
+                 1: 0.015,
                  2: 0.01,
                  3: 0.005,
                  4: 0,
@@ -193,6 +193,8 @@ class ModuleSelectEnv(gym.Env):
                                   "usage ratio 2",
                                   "usage ratio 3",
                                   "usage ratio 4",
+                                  str(delay_weights[simulate_num]),
+                                  str(static_terms[simulate_num]),
                                   ])
     
     def _write_log(self):

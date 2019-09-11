@@ -29,11 +29,11 @@ t = d * weight
 bigger w, bigger std of response time
 std term
 """
-delay_weights = {0: 0.01,
-                 1: 0.05,
-                 2: 0.1,
-                 3: 0.25,
-                 4: 0.5,
+delay_weights = {0: 0.05,
+                 1: 0.1,
+                 2: 0.15,
+                 3: 0.2,
+                 4: 0.35,
                  5: "",
                  6: "",
                  }
@@ -42,11 +42,11 @@ wait_time = t + static_term
 bigger add term, bigger mean of response time
 mean term
 """
-static_terms = {0: 0.05,
-                1: 0.045,
-                2: 0.04,
-                3: 0.03,
-                4: 0.02,
+static_terms = {0: 0.07,
+                1: 0.065,
+                2: 0.06,
+                3: 0.055,
+                4: 0.05,
                 5: "",
                 6: "",
                 }

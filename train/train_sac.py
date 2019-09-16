@@ -38,6 +38,8 @@ def callback(_locals, _globals):
     :param _globals: (dict)
     """
     global best_mean_reward, n_steps
+    if (n_steps + 1) % 10000 == 0:
+        best_mean_reward = 0  # for saving model by force
     if (n_steps + 1) % 500 == 0:
         x, y = ts2xy(load_results(log_directory), 'timesteps')
         if len(x) > 0:

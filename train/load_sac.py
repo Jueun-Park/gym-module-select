@@ -22,7 +22,7 @@ model_name = os.path.abspath(args.model)
 
 env = gym.make('ModuleSelectContinuous-v1',
                 save_log_flag=True,
-                log_num=6,
+                log_num=8,
                 )
 env = DummyVecEnv([lambda: env])
 model = SAC.load(model_name)

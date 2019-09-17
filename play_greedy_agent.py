@@ -21,7 +21,6 @@ env = gym.make('ModuleSelect-v1',
 env = DummyVecEnv([lambda: env])
 num_done = 0
 
-total_reward = []
 rewards = [0]
 try:
     obs = env.reset()

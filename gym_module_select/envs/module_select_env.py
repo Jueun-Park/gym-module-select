@@ -234,6 +234,8 @@ class ModuleSelectEnv(gym.Env):
                 ratios[0], ratios[1], ratios[2], ratios[3], ratios[4]))
         except AttributeError:
             pass
+        except ZeroDivisionError:
+            pass
 
     def _simulate_num_proc(self):
         add_term = np.random.normal(loc=0, scale=0.9)

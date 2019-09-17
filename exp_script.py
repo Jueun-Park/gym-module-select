@@ -13,4 +13,4 @@ def init_parse_argument():
 args = init_parse_argument()
 
 for num_proc in range(args.max_num_proc + 1):
-    os.system("python play_const_proc_each_action.py -e 10 -p " + str(num_proc))
+    os.system("python play_const_proc_each_action.py -e 5 -p " + str(num_proc))

@@ -20,7 +20,7 @@ args = init_parse_argument()
 
 timestr = time.strftime("%Y%m%d-%H%M%S")
 root_dir = os.path.dirname(os.path.abspath((os.path.abspath(__file__))))
-file_name = root_dir + "/result/proc-vs-time/"
+file_name = root_dir + "/result/proc-and-reward/"
 os.makedirs(file_name, exist_ok=True)
 file_name += timestr + ".csv"
 print(">>> save csv log file: ", file_name)

@@ -61,12 +61,14 @@ class ModuleSelectEnv(gym.Env):
     metadata = {'render.modes': ['human']}
     continuous = False
 
-    def __init__(self, verbose=0, save_log_flag=False, log_num=None):
+    def __init__(self, verbose=0, save_log_flag=False, log_num=None, do_proc_simulation=True, custom_num_proc=0):
         super(ModuleSelectEnv, self).__init__()
         self.verbose = verbose
         self.save_log_flag = save_log_flag
         if self.save_log_flag and log_num is not None:
             self._init_log_to_write(log_num)
+        self.do_proc_simulation = do_proc_simulation
+        self.num_proc = custom_num_proc
 
         stats_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0"
         hyperparams, stats_path = get_saved_hyperparams(stats_path,
@@ -105,7 +107,8 @@ class ModuleSelectEnv(gym.Env):
             action = softmax(action)
             action = int(np.random.choice(self.num_modules, 1, p=action))
         reward_sum = 0
-        self.num_proc = self._simulate_num_proc()
+        if self.do_proc_simulation:
+            self.num_proc = self._simulate_num_proc()
         for _ in range(CONTROLS_PER_ACTION):
             start_time = time.time()
             if action == 0:
@@ -146,6 +149,7 @@ class ModuleSelectEnv(gym.Env):
         self.driving_score_percent = np.max((self.inner_env.envs[0].env.viewer.handler.driving_score / 10,
                                              self.driving_score_percent))
         obs = np.concatenate((infos[0]['encoded_obs'], [[self.num_proc]]), 1)
+        infos[0]["num_proc"] = self.num_proc
         return obs, reward_sum, done, infos[0]
 
     def reset(self):
@@ -158,8 +162,8 @@ class ModuleSelectEnv(gym.Env):
             self._print_log()
         if self.save_log_flag:
             self._write_log()
-
-        self.num_proc = INIT_NUM_PROC
+        if self.do_proc_simulation:
+            self.num_proc = INIT_NUM_PROC
         self.driving_score_percent = 0
         self.episode_reward = 0
         self.module_response_times = deque()

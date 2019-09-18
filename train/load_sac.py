@@ -21,7 +21,7 @@ model_name = os.path.abspath(args.model)
 
 timestr = time.strftime("[%Y%m%d-%H%M%S]")
 log_file = open("load_log.txt", 'a', encoding='utf-8')
-log_file.write(timestr + args.model)
+log_file.write(timestr + args.model + "\n")
 
 env = gym.make('ModuleSelectContinuous-v1',
                 save_log_flag=True,

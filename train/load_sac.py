@@ -7,12 +7,11 @@ import argparse
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import SAC
 
-NUM_SIMULATION = 25
-
 
 def init_parse_argument():
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model', help='model to load', type=str, default='train/sac-models-190903-td4/sac-model_34000.pkl')
+    parser.add_argument('-e', '--num-exp', help='num experiment episode', type=int, default=10)
     args = parser.parse_args()
     return args
 
@@ -30,7 +29,7 @@ model = SAC.load(model_name)
 num_done = 0
 try:
     obs = env.reset()
-    while num_done < NUM_SIMULATION:
+    while num_done < args.num_exp:
         action, _states = model.predict(obs)
         obs, rewards, dones, info = env.step(action)
         env.render()

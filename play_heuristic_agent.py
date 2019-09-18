@@ -16,7 +16,7 @@ args = init_parse_argument()
 env = gym.make('ModuleSelect-v1',
                verbose=1,
                save_log_flag=True,
-               log_num=6,
+               log_num=7,
                )
 env = DummyVecEnv([lambda: env])
 num_done = 0
@@ -36,7 +36,6 @@ try:
             action = [0]
         obs, rewards, dones, info = env.step(action)
         num_proc = info[0]["num_proc"]
-        print(obs[-1])
         env.render()
         if dones[0]:
             num_done += 1

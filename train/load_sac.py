@@ -3,6 +3,7 @@ import sys
 sys.path.append('.')
 import gym_module_select
 import os
+import time
 import argparse
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines import SAC
@@ -10,14 +11,17 @@ from stable_baselines import SAC
 
 def init_parse_argument():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--model', help='model to load', type=str, default='train/sac-models-190903-td4/sac-model_34000.pkl')
+    parser.add_argument('-m', '--model', help='model to load', type=str)
     parser.add_argument('-e', '--num-exp', help='num experiment episode', type=int, default=10)
     args = parser.parse_args()
     return args
 
-
 args = init_parse_argument()
 model_name = os.path.abspath(args.model)
+
+timestr = time.strftime("[%Y%m%d-%H%M%S]")
+log_file = open("load_log.txt", 'a', encoding='utf-8')
+log_file.write(timestr + args.model)
 
 env = gym.make('ModuleSelectContinuous-v1',
                 save_log_flag=True,

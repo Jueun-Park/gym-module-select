@@ -9,4 +9,5 @@ for num_command in range(7):
 
 os.system("python play_greedy_agent.py -e " + str(NUM_EXPERIMENT_EPISODES))
 os.system("python play_heuristic_agent.py -e " + str(NUM_EXPERIMENT_EPISODES))
-os.system("python train/loac_sac.py -e " + str(NUM_EXPERIMENT_EPISODES))
+os.system("python train/load_sac.py -e " + str(NUM_EXPERIMENT_EPISODES) + " -m train/sac-models-164441-20190916/sac-model_52000.pkl")
+os.system("python train/load_sac.py -e " + str(NUM_EXPERIMENT_EPISODES) + " -m train/sac-models-164441-20190916/sac-model_88500.pkl")

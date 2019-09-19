@@ -17,7 +17,10 @@ def init_parse_argument():
     return args
 
 args = init_parse_argument()
-model_name = os.path.abspath(args.model)
+try:
+    model_name = os.path.abspath(args.model)
+except TypeError:
+    print("no model file")
 
 timestr = time.strftime("[%Y%m%d-%H%M%S]")
 log_file = open("load_log.txt", 'a', encoding='utf-8')

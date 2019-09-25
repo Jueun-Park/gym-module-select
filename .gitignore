@@ -1,6 +1,7 @@
 *tensorboard
 *.csv
 unitylog.txt
+load_log.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

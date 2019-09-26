@@ -103,9 +103,21 @@ class ModuleSelectEnv(gym.Env):
 
     def step(self, action):
         # TODO:
+        ACTION_THRESHOLD = 0.6
         if self.continuous:
-            action = softmax(action)
-            action = int(np.random.choice(self.num_modules, 1, p=action))
+            candidates = [i for i, v in enumerate(action) if v >= ACTION_THRESHOLD]
+            candidates_value = [v for i, v in enumerate(action) if v >= ACTION_THRESHOLD]
+            if self.previous_action in candidates:
+                action = self.previous_action
+            else:
+                if candidates:
+                    candidates_value = softmax(candidates_value)
+                    action = int(np.random.choice(candidates, 1, p=candidates_value))
+                else:
+                    action = softmax(action)
+                    action = int(np.random.choice(self.num_modules, 1, p=action))
+            print(candidates, action)
+            self.previous_action = action
         reward_sum = 0
         if self.do_proc_simulation:
             self.num_proc = self._simulate_num_proc()
@@ -170,6 +182,7 @@ class ModuleSelectEnv(gym.Env):
         self.num_use = {}
         for i in range(5):
             self.num_use[i] = 0
+        self.previous_action = None
 
         obs = np.concatenate((infos['encoded_obs'], [[self.num_proc]]), 1)
         return obs

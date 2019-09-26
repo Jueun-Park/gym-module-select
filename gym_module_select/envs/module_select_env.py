@@ -106,7 +106,7 @@ class ModuleSelectEnv(gym.Env):
         ACTION_THRESHOLD = 0.6
         if self.continuous:
             candidates = [i for i, v in enumerate(action) if v >= ACTION_THRESHOLD]
-            candidates_value = [v for i, v in enumerate(action) if v >= ACTION_THRESHOLD]
+            candidates_value = [v for v in action if v >= ACTION_THRESHOLD]
             if self.previous_action in candidates:
                 action = self.previous_action
             else:
@@ -116,7 +116,6 @@ class ModuleSelectEnv(gym.Env):
                 else:
                     action = softmax(action)
                     action = int(np.random.choice(self.num_modules, 1, p=action))
-            print(candidates, action)
             self.previous_action = action
         reward_sum = 0
         if self.do_proc_simulation:

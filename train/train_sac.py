@@ -72,7 +72,7 @@ if __name__ == "__main__":
         policy=MlpPolicy,
         verbose=1,
         tensorboard_log="./sac_tensorboard/",
-        batch_size=512,
+        batch_size=64,
     )
     try:
         model.learn(

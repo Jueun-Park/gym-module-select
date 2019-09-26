@@ -98,7 +98,7 @@ class ModuleSelectEnv(gym.Env):
 
         self.observation_space = spaces.Box(low=np.finfo(np.float32).min,
                                             high=np.finfo(np.float32).max,
-                                            shape=(1, self.inner_env.envs[0].env.z_size + 1, ),
+                                            shape=(1, 1, ),
                                             dtype=np.float32)
 
     def step(self, action):
@@ -148,9 +148,8 @@ class ModuleSelectEnv(gym.Env):
         self.episode_reward += reward_sum
         self.driving_score_percent = np.max((self.inner_env.envs[0].env.viewer.handler.driving_score / 10,
                                              self.driving_score_percent))
-        obs = np.concatenate((infos[0]['encoded_obs'], [[self.num_proc]]), 1)
         infos[0]["num_proc"] = self.num_proc
-        return obs, reward_sum, done, infos[0]
+        return [[self.num_proc]], reward_sum, done, infos[0]
 
     def reset(self):
         self.inner_obs = self.inner_env.reset()
@@ -171,8 +170,7 @@ class ModuleSelectEnv(gym.Env):
         for i in range(5):
             self.num_use[i] = 0
 
-        obs = np.concatenate((infos['encoded_obs'], [[self.num_proc]]), 1)
-        return obs
+        return [[self.num_proc]]
 
     def render(self, mode='human', close=False):
         result = self.inner_env.render(mode=mode)

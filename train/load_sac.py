@@ -13,6 +13,7 @@ def init_parse_argument():
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model', help='model to load', type=str)
     parser.add_argument('-e', '--num-exp', help='num experiment episode', type=int, default=10)
+    parser.add_argument('-l', '--log', help='off logging (default is on)', action='store_false', default=True)
     args = parser.parse_args()
     return args
 
@@ -27,7 +28,7 @@ log_file = open("load_log.txt", 'a', encoding='utf-8')
 log_file.write(timestr + args.model + "\n")
 
 env = gym.make('ModuleSelectContinuous-v1',
-                save_log_flag=True,
+                save_log_flag=args.log,
                 log_num=8,
                 )
 env = DummyVecEnv([lambda: env])

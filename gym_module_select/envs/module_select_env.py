@@ -203,6 +203,7 @@ class ModuleSelectEnv(gym.Env):
         file_name = root_dir + "/result/" + directory_names[simulate_num] + \
                                             str(delay_weights[simulate_num]) + "+" + \
                                             str(static_terms[simulate_num]) + "/"
+
         os.makedirs(file_name, exist_ok=True)
         file_name += directory_names[simulate_num] + timestr + ".csv"
         print(">>> save csv log file: ", file_name)

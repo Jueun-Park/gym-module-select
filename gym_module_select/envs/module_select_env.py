@@ -25,37 +25,6 @@ directory_names = {0: "0+",
                    8: "sac-agent",
                    }
 
-"""
-d ~ Exp(1/num_proc(ms))
-t = d * weight
-bigger w, bigger std of response time
-std term
-"""
-delay_weights = {0: 0.05,
-                 1: 0.1,
-                 2: 0.15,
-                 3: 0.2,
-                 4: 0.35,
-                 5: "",
-                 6: "",
-                 7: "",
-                 8: "",
-                 }
-"""
-wait_time = t + static_term
-bigger add term, bigger mean of response time
-mean term
-"""
-static_terms = {0: 0.07,
-                1: 0.065,
-                2: 0.06,
-                3: 0.055,
-                4: 0.05,
-                5: "",
-                6: "",
-                7: "",
-                8: "",                
-                }
 
 class ModuleSelectEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -79,15 +48,14 @@ class ModuleSelectEnv(gym.Env):
                                         log_dir="modules/logs",
                                         hyperparams=hyperparams)
 
-        model_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0.pkl"
-        self.model = ALGOS["sac"].load(model_path)
+        day_model_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0.pkl"
+        self.day_model = ALGOS["sac"].load(day_model_path)
+        night_model_path = ""
+        self.night_model = ALGOS["sac"].load(night_model_path)        
 
-        self.num_modules = 5
-        self.module0 = VAESACModule(self.inner_env, self.model, delay_weights[0], static_terms[0])
-        self.module1 = VAESACModule(self.inner_env, self.model, delay_weights[1], static_terms[1])
-        self.module2 = VAESACModule(self.inner_env, self.model, delay_weights[2], static_terms[2])
-        self.module3 = VAESACModule(self.inner_env, self.model, delay_weights[3], static_terms[3])
-        self.module4 = VAESACModule(self.inner_env, self.model, delay_weights[4], static_terms[4])
+        self.num_modules = 2
+        self.module0 = VAESACModule(self.inner_env, self.day_model, delay_flag=False)
+        self.module1 = VAESACModule(self.inner_env, self.night_model, delay_flag=False)
 
         if self.continuous:
             # the probability of selection of end-to-end module
@@ -129,18 +97,6 @@ class ModuleSelectEnv(gym.Env):
             elif action == 1:
                 self.num_use[1] += 1
                 inner_action = self.module1.predict(self.inner_obs, self.num_proc)
-                check_time(start_time, self.module_response_times)
-            elif action == 2:
-                self.num_use[2] += 1
-                inner_action = self.module2.predict(self.inner_obs, self.num_proc)
-                check_time(start_time, self.module_response_times)
-            elif action == 3:
-                self.num_use[3] += 1
-                inner_action = self.module3.predict(self.inner_obs, self.num_proc)
-                check_time(start_time, self.module_response_times)
-            elif action == 4:
-                self.num_use[4] += 1                
-                inner_action = self.module4.predict(self.inner_obs, self.num_proc)
                 check_time(start_time, self.module_response_times)
             else:
                 print("action error")
@@ -200,11 +156,9 @@ class ModuleSelectEnv(gym.Env):
         timestr = time.strftime("%Y%m%d-%H%M%S")
         root_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
         root_dir = os.path.abspath(os.path.join(root_dir, ".."))
-        file_name = root_dir + "/result/" + directory_names[simulate_num] + \
-                                            str(delay_weights[simulate_num]) + "+" + \
-                                            str(static_terms[simulate_num]) + "/"
+        file_name = root_dir + "/result/" + directory_names[simulate_num]
         os.makedirs(file_name, exist_ok=True)
-        file_name += directory_names[simulate_num] + timestr + ".csv"
+        file_name += directory_names[simulate_num] + "/" + timestr + ".csv"
         print(">>> save csv log file: ", file_name)
         self.csv_file = open(file_name, "w", newline="")
         self.csv_writer = csv.writer(self.csv_file)
@@ -214,11 +168,6 @@ class ModuleSelectEnv(gym.Env):
                                   "response time std",
                                   "usage ratio 0",
                                   "usage ratio 1",
-                                  "usage ratio 2",
-                                  "usage ratio 3",
-                                  "usage ratio 4",
-                                  str(delay_weights[simulate_num]),
-                                  str(static_terms[simulate_num]),
                                   ])
     
     def _write_log(self):
@@ -242,19 +191,11 @@ class ModuleSelectEnv(gym.Env):
             print("Response Time Mean: {:.2f}".format(np.mean(self.module_response_times)))
             print("Response Time std: {:.2f}".format(np.std(self.module_response_times)))
             ratios = dict_ratio(self.num_use, self.num_modules)
-            print("Usage Ratio: {:.2f} {:.2f} {:.2f} {:.2f} {:.2f}".format(
-                ratios[0], ratios[1], ratios[2], ratios[3], ratios[4]))
+            print("Usage Ratio: {:.2f} {:.2f}".format(ratios[0], ratios[1]))
         except AttributeError:
             pass
         except ZeroDivisionError:
             pass
-
-    def _simulate_num_proc(self):
-        add_term = np.random.normal(loc=0, scale=0.9)
-        add_term = round(add_term)
-        self.num_proc += add_term
-        self.num_proc = np.clip(self.num_proc, 0, np.inf)
-        return int(self.num_proc)
 
 
 class ModuleSelectEnvContinuous(ModuleSelectEnv):
@@ -273,6 +214,7 @@ def check_time(start_time, time_deque: deque):
     end_time = time.time()
     processing_time = end_time - start_time
     time_deque.append(processing_time * 1000)  # ms
+
 
 def dict_ratio(dict_in, num):
     total = 0

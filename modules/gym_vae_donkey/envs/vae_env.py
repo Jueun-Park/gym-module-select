@@ -154,9 +154,10 @@ class DonkeyVAEEnv(gym.Env):
         """
         # Update command history
         if self.n_command_history > 0:
-            self.command_history = np.roll(self.command_history, shift=-self.n_commands, axis=-1)
-            self.command_history[..., -self.n_commands:] = action
-            observation = np.concatenate((observation, self.command_history), axis=-1)
+            # self.command_history = np.roll(self.command_history, shift=-self.n_commands, axis=-1)
+            # self.command_history[..., -self.n_commands:] = action
+            # observation = np.concatenate((observation, self.command_history), axis=-1)
+            pass
 
         jerk_penalty = self.jerk_penalty()
         # Cancel reward if the continuity constrain is violated
@@ -208,7 +209,8 @@ class DonkeyVAEEnv(gym.Env):
         observation, reward, done, info = self.observe()
 
         if self.n_command_history > 0:
-            observation = np.concatenate((observation, self.command_history), axis=-1)
+            # observation = np.concatenate((observation, self.command_history), axis=-1)
+            pass
 
         if self.n_stack > 1:
             self.stacked_obs[...] = 0
@@ -232,13 +234,11 @@ class DonkeyVAEEnv(gym.Env):
         :return: (np.ndarray, float, bool, dict)
         """
         observation, reward, done, info = self.viewer.observe()
-        info['raw_obs'] = observation
         # Learn from Pixels
         if self.vae is None:
             return observation, reward, done, info
         # Encode the image
         encoded_obs = self.vae.encode(observation)
-        info['encoded_obs'] = encoded_obs
         return encoded_obs, reward, done, info
 
     def close(self):

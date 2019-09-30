@@ -7,22 +7,15 @@ from collections import deque
 
 from modules.vae_sac_modules import VAESACModule
 from modules.lane_tracker import LaneTracker
-from utils.utils import create_test_env, get_saved_hyperparams, ALGOS
+from utils.utils import create_test_env, get_saved_hyperparams, ALGOS, load_vae
 
 PENALTY_WEIGHT = 0.1
-INIT_NUM_PROC = 0
 CONTROLS_PER_ACTION = 10
 
 
-directory_names = {0: "0+",
-                   1: "1+",
-                   2: "2+",
-                   3: "3+",
-                   4: "4+",
-                   5: "random-agent",
-                   6: "greedy-agent",
-                   7: "heuristic-agent",
-                   8: "sac-agent",
+directory_names = {0: "0+day",
+                   1: "1+night",
+                   2: "day-night-random-agent",
                    }
 
 
@@ -42,15 +35,20 @@ class ModuleSelectEnv(gym.Env):
         stats_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0"
         hyperparams, stats_path = get_saved_hyperparams(stats_path,
                                                     norm_reward=False)
-        hyperparams['vae_path'] = "modules/logs/vae-level-0-dim-32.pkl"
+        hyperparams['vae_path'] = ""
         self.inner_env = create_test_env(stats_path=stats_path,
                                         seed=0,
                                         log_dir="modules/logs",
                                         hyperparams=hyperparams)
 
+        day_vae_path = "modules/logs/vae-level-0-dim-32.pkl"
+        self.day_vae = load_vae(day_vae_path)
+        night_vae_path = "modules/logs_n/vae-32_best.pkl"
+        self.night_vae = load_vae(night_vae_path)
+
         day_model_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0.pkl"
         self.day_model = ALGOS["sac"].load(day_model_path)
-        night_model_path = ""
+        night_model_path = "modules/logs_n/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best.pkl"
         self.night_model = ALGOS["sac"].load(night_model_path)        
 
         self.num_modules = 2
@@ -66,7 +64,7 @@ class ModuleSelectEnv(gym.Env):
 
         self.observation_space = spaces.Box(low=np.finfo(np.float32).min,
                                             high=np.finfo(np.float32).max,
-                                            shape=(1, self.inner_env.envs[0].env.z_size + 1, ),
+                                            shape=(1, 32, ),
                                             dtype=np.float32)
 
     def step(self, action):
@@ -86,25 +84,23 @@ class ModuleSelectEnv(gym.Env):
                     action = int(np.random.choice(self.num_modules, 1, p=action))
             self.previous_action = action
         reward_sum = 0
-        if self.do_proc_simulation:
-            self.num_proc = self._simulate_num_proc()
         for _ in range(CONTROLS_PER_ACTION):
             start_time = time.time()
             if action == 0:
                 self.num_use[0] += 1
+                encoded_obs = self.day_vae.encode(*self.inner_obs)
+                self.inner_obs = np.concatenate((encoded_obs, self.inner_env.envs[0].env.command_history), axis=-1)
                 inner_action = self.module0.predict(self.inner_obs, self.num_proc)
                 check_time(start_time, self.module_response_times)
             elif action == 1:
                 self.num_use[1] += 1
+                encoded_obs = self.night_vae.encode(*self.inner_obs)
+                self.inner_obs = np.concatenate((encoded_obs, self.inner_env.envs[0].env.command_history), axis=-1)
                 inner_action = self.module1.predict(self.inner_obs, self.num_proc)
                 check_time(start_time, self.module_response_times)
             else:
                 print("action error")
-            self.inner_obs, reward, done, infos = self.inner_env.step(inner_action)
-            if self.first_flag:
-                self.first_flag = False
-            else:
-                self.raw_obs = infos[0]['raw_obs']
+            self.inner_obs, reward, done, infos = self.inner_env.step([inner_action])
             # time_penalty = 0
             time_penalty = np.log(self.module_response_times[-1]*50 + 1) * PENALTY_WEIGHT
             time_penalty = np.clip(time_penalty, 0, reward[0])
@@ -115,22 +111,16 @@ class ModuleSelectEnv(gym.Env):
         self.episode_reward += reward_sum
         self.driving_score_percent = np.max((self.inner_env.envs[0].env.viewer.handler.driving_score / 10,
                                              self.driving_score_percent))
-        obs = np.concatenate((infos[0]['encoded_obs'], [[self.num_proc]]), 1)
-        infos[0]["num_proc"] = self.num_proc
-        return obs, reward_sum, done, infos[0]
+
+        return encoded_obs, reward_sum, done, infos[0]
 
     def reset(self):
         self.inner_obs = self.inner_env.reset()
-        self._, _, _, infos = self.inner_env.envs[0].env.observe()
-        self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()  # first observe
-        self.first_flag = True
         
         if self.verbose == 1:
             self._print_log()
         if self.save_log_flag:
             self._write_log()
-        if self.do_proc_simulation:
-            self.num_proc = INIT_NUM_PROC
         self.driving_score_percent = 0
         self.episode_reward = 0
         self.module_response_times = deque()
@@ -139,8 +129,8 @@ class ModuleSelectEnv(gym.Env):
             self.num_use[i] = 0
         self.previous_action = None
 
-        obs = np.concatenate((infos['encoded_obs'], [[self.num_proc]]), 1)
-        return obs
+        encoded_obs = self.night_vae.encode(*self.inner_obs)
+        return encoded_obs
 
     def render(self, mode='human', close=False):
         result = self.inner_env.render(mode=mode)
@@ -156,9 +146,10 @@ class ModuleSelectEnv(gym.Env):
         timestr = time.strftime("%Y%m%d-%H%M%S")
         root_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
         root_dir = os.path.abspath(os.path.join(root_dir, ".."))
-        file_name = root_dir + "/result/" + directory_names[simulate_num]
+        file_name = root_dir + "/result/" + directory_names[simulate_num] + "/"
+
         os.makedirs(file_name, exist_ok=True)
-        file_name += directory_names[simulate_num] + "/" + timestr + ".csv"
+        file_name += directory_names[simulate_num] + timestr + ".csv"
         print(">>> save csv log file: ", file_name)
         self.csv_file = open(file_name, "w", newline="")
         self.csv_writer = csv.writer(self.csv_file)

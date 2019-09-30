@@ -15,7 +15,7 @@ CONTROLS_PER_ACTION = 10
 
 directory_names = {0: "0+day",
                    1: "1+night",
-                   2: "day-night-random-agent",
+                   2: "day-night-random-agent+",
                    }
 
 
@@ -101,10 +101,6 @@ class ModuleSelectEnv(gym.Env):
             else:
                 print("action error")
             self.inner_obs, reward, done, infos = self.inner_env.step([inner_action])
-            # time_penalty = 0
-            time_penalty = np.log(self.module_response_times[-1]*50 + 1) * PENALTY_WEIGHT
-            time_penalty = np.clip(time_penalty, 0, reward[0])
-            reward_sum += reward[0] - time_penalty
             if done:
                 break
 
@@ -147,7 +143,6 @@ class ModuleSelectEnv(gym.Env):
         root_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
         root_dir = os.path.abspath(os.path.join(root_dir, ".."))
         file_name = root_dir + "/result/" + directory_names[simulate_num] + "/"
-
         os.makedirs(file_name, exist_ok=True)
         file_name += directory_names[simulate_num] + timestr + ".csv"
         print(">>> save csv log file: ", file_name)
@@ -168,7 +163,7 @@ class ModuleSelectEnv(gym.Env):
                                       self.episode_reward,
                                       np.mean(self.module_response_times),
                                       np.std(self.module_response_times),
-                                      ratios[0], ratios[1], ratios[2], ratios[3], ratios[4],
+                                      ratios[0], ratios[1],
                                     ])
             self.csv_file.flush()
         except:

@@ -2,6 +2,7 @@
 *.csv
 unitylog.txt
 load_log.txt
+logs_n
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -5,8 +5,6 @@ import numpy as np
 import time
 from collections import deque
 
-from modules.vae_sac_modules import VAESACModule
-from modules.lane_tracker import LaneTracker
 from utils.utils import create_test_env, get_saved_hyperparams, ALGOS, load_vae
 
 PENALTY_WEIGHT = 0.1
@@ -43,23 +41,19 @@ class ModuleSelectEnv(gym.Env):
 
         day_vae_path = "modules/logs/vae-level-0-dim-32.pkl"
         self.day_vae = load_vae(day_vae_path)
-        night_vae_path = "modules/logs_n/vae-32_best.pkl"
-        self.night_vae = load_vae(night_vae_path)
+        # night_vae_path = "modules/logs_n/vae-32_best.pkl"
+        # self.night_vae = load_vae(night_vae_path)
 
         day_model_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0.pkl"
-        self.day_model = ALGOS["sac"].load(day_model_path)
-        night_model_path = "modules/logs_n/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best.pkl"
-        self.night_model = ALGOS["sac"].load(night_model_path)        
+        self.day_module = ALGOS["sac"].load(day_model_path)
+        # night_model_path = "modules/logs_n/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best.pkl"
+        # self.night_module = ALGOS["sac"].load(night_model_path)        
 
         self.num_modules = 2
-        self.module0 = VAESACModule(self.inner_env, self.day_model, delay_flag=False)
-        self.module1 = VAESACModule(self.inner_env, self.night_model, delay_flag=False)
 
         if self.continuous:
-            # the probability of selection of end-to-end module
             self.action_space = spaces.Box(low=-1, high=1, shape=(self.num_modules, ))
         else:
-            # lane detection, end-to-end
             self.action_space = spaces.Discrete(self.num_modules)
 
         self.observation_space = spaces.Box(low=np.finfo(np.float32).min,
@@ -90,17 +84,19 @@ class ModuleSelectEnv(gym.Env):
                 self.num_use[0] += 1
                 encoded_obs = self.day_vae.encode(*self.inner_obs)
                 self.inner_obs = np.concatenate((encoded_obs, self.inner_env.envs[0].env.command_history), axis=-1)
-                inner_action = self.module0.predict(self.inner_obs, self.num_proc)
-                check_time(start_time, self.module_response_times)
+                inner_action = self.day_module.predict(self.inner_obs, deterministic=True)
             elif action == 1:
                 self.num_use[1] += 1
                 encoded_obs = self.night_vae.encode(*self.inner_obs)
                 self.inner_obs = np.concatenate((encoded_obs, self.inner_env.envs[0].env.command_history), axis=-1)
-                inner_action = self.module1.predict(self.inner_obs, self.num_proc)
-                check_time(start_time, self.module_response_times)
+                inner_action = self.night_module.predict(self.inner_obs, deterministic=True)
             else:
                 print("action error")
+            if isinstance(self.inner_env.envs[0].env.action_space, gym.spaces.Box):
+                inner_action = np.clip(inner_action[0], self.inner_env.envs[0].env.action_space.low, self.inner_env.envs[0].env.action_space.high)
+            check_time(start_time, self.response_times)
             self.inner_obs, reward, done, infos = self.inner_env.step([inner_action])
+            reward_sum += reward[0]
             if done:
                 break
 
@@ -119,13 +115,13 @@ class ModuleSelectEnv(gym.Env):
             self._write_log()
         self.driving_score_percent = 0
         self.episode_reward = 0
-        self.module_response_times = deque()
+        self.response_times = deque()
         self.num_use = {}
         for i in range(5):
             self.num_use[i] = 0
         self.previous_action = None
 
-        encoded_obs = self.night_vae.encode(*self.inner_obs)
+        encoded_obs = self.day_vae.encode(*self.inner_obs)
         return encoded_obs
 
     def render(self, mode='human', close=False):
@@ -151,7 +147,6 @@ class ModuleSelectEnv(gym.Env):
         self.csv_writer.writerow(["driving score (%)",
                                   "episode reward",
                                   "response time mean",
-                                  "response time std",
                                   "usage ratio 0",
                                   "usage ratio 1",
                                   ])
@@ -161,8 +156,7 @@ class ModuleSelectEnv(gym.Env):
             ratios = dict_ratio(self.num_use, self.num_modules)
             self.csv_writer.writerow([self.driving_score_percent,
                                       self.episode_reward,
-                                      np.mean(self.module_response_times),
-                                      np.std(self.module_response_times),
+                                      np.mean(self.response_times),
                                       ratios[0], ratios[1],
                                     ])
             self.csv_file.flush()
@@ -174,8 +168,7 @@ class ModuleSelectEnv(gym.Env):
         try:
             print("Driving Score (%): {:.2f}".format(self.driving_score_percent))
             print("Episode Reward: {:.2f}".format(self.episode_reward))
-            print("Response Time Mean: {:.2f}".format(np.mean(self.module_response_times)))
-            print("Response Time std: {:.2f}".format(np.std(self.module_response_times)))
+            print("Response Time: {:.2f}".format(np.mean(self.response_times)))
             ratios = dict_ratio(self.num_use, self.num_modules)
             print("Usage Ratio: {:.2f} {:.2f}".format(ratios[0], ratios[1]))
         except AttributeError:

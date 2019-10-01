@@ -82,7 +82,7 @@ class ModuleSelectEnv(gym.Env):
             start_time = time.time()
             if action == 0:
                 self.num_use[0] += 1
-                encoded_obs = self.day_vae.encode(*self.inner_obs)
+                encoded_obs = self.day_vae.encode(*self.inner_obs)  # TODO: time overhead
                 self.inner_obs = np.concatenate((encoded_obs, self.inner_env.envs[0].env.command_history), axis=-1)
                 inner_action = self.day_module.predict(self.inner_obs, deterministic=True)
             elif action == 1:

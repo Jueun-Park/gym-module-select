@@ -33,7 +33,7 @@ class ModuleSelectEnv(gym.Env):
         stats_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0"
         hyperparams, stats_path = get_saved_hyperparams(stats_path,
                                                     norm_reward=False)
-        hyperparams['vae_path'] = ""
+        hyperparams['vae_path'] = "modules/logs_n/vae-32_best.pkl"
         self.inner_env = create_test_env(stats_path=stats_path,
                                         seed=0,
                                         log_dir="modules/logs",
@@ -41,13 +41,13 @@ class ModuleSelectEnv(gym.Env):
 
         day_vae_path = "modules/logs/vae-level-0-dim-32.pkl"
         self.day_vae = load_vae(day_vae_path)
-        # night_vae_path = "modules/logs_n/vae-32_best.pkl"
-        # self.night_vae = load_vae(night_vae_path)
+        night_vae_path = "modules/logs_n/vae-32_best.pkl"
+        self.night_vae = load_vae(night_vae_path)
 
         day_model_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0.pkl"
         self.day_module = ALGOS["sac"].load(day_model_path)
-        # night_model_path = "modules/logs_n/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best.pkl"
-        # self.night_module = ALGOS["sac"].load(night_model_path)        
+        night_model_path = "modules/logs_n/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best.pkl"
+        self.night_module = ALGOS["sac"].load(night_model_path)        
 
         self.num_modules = 2
 
@@ -78,24 +78,24 @@ class ModuleSelectEnv(gym.Env):
                     action = int(np.random.choice(self.num_modules, 1, p=action))
             self.previous_action = action
         reward_sum = 0
+        if action == 0:
+            self.inner_env.envs[0].set_vae(self.day_vae)
+        elif action == 1:
+            self.inner_env.envs[0].set_vae(self.night_vae)
         for _ in range(CONTROLS_PER_ACTION):
             start_time = time.time()
             if action == 0:
                 self.num_use[0] += 1
-                encoded_obs = self.day_vae.encode(*self.inner_obs)  # TODO: time overhead
-                self.inner_obs = np.concatenate((encoded_obs, self.inner_env.envs[0].env.command_history), axis=-1)
                 inner_action = self.day_module.predict(self.inner_obs, deterministic=True)
             elif action == 1:
                 self.num_use[1] += 1
-                encoded_obs = self.night_vae.encode(*self.inner_obs)
-                self.inner_obs = np.concatenate((encoded_obs, self.inner_env.envs[0].env.command_history), axis=-1)
                 inner_action = self.night_module.predict(self.inner_obs, deterministic=True)
             else:
                 print("action error")
             if isinstance(self.inner_env.envs[0].env.action_space, gym.spaces.Box):
                 inner_action = np.clip(inner_action[0], self.inner_env.envs[0].env.action_space.low, self.inner_env.envs[0].env.action_space.high)
             check_time(start_time, self.response_times)
-            self.inner_obs, reward, done, infos = self.inner_env.step([inner_action])
+            self.inner_obs, reward, done, infos = self.inner_env.step(inner_action)
             reward_sum += reward[0]
             if done:
                 break
@@ -104,11 +104,11 @@ class ModuleSelectEnv(gym.Env):
         self.driving_score_percent = np.max((self.inner_env.envs[0].env.viewer.handler.driving_score / 10,
                                              self.driving_score_percent))
 
-        return encoded_obs, reward_sum, done, infos[0]
+        # TODO: what obs to give the agent?
+        return infos[0]['encoded_obs'], reward_sum, done, infos[0]
 
     def reset(self):
         self.inner_obs = self.inner_env.reset()
-        
         if self.verbose == 1:
             self._print_log()
         if self.save_log_flag:
@@ -121,8 +121,9 @@ class ModuleSelectEnv(gym.Env):
             self.num_use[i] = 0
         self.previous_action = None
 
-        encoded_obs = self.day_vae.encode(*self.inner_obs)
-        return encoded_obs
+        self._, _, _, infos = self.inner_env.envs[0].env.observe()
+        self.inner_env.envs[0].set_vae(self.day_vae)
+        return infos['encoded_obs']
 
     def render(self, mode='human', close=False):
         result = self.inner_env.render(mode=mode)

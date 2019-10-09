@@ -99,7 +99,7 @@ class ModuleSelectEnv(gym.Env):
 
         self.observation_space = spaces.Box(low=np.finfo(np.float32).min,
                                             high=np.finfo(np.float32).max,
-                                            shape=(1, 1, ),
+                                            shape=(1, MAX_NUM_PROC+1, ),  # 0 to 11, total 12 dim
                                             dtype=np.float32)
 
     def step(self, action):
@@ -163,7 +163,7 @@ class ModuleSelectEnv(gym.Env):
         return self.state, reward_sum, done, infos[0]
 
     def _make_one_hot(self):
-        self.state = [0 for _ in range(MAX_NUM_PROC)]
+        self.state = [0 for _ in range(MAX_NUM_PROC+1)]  # 12 dim
         self.state[self.num_proc] = 1
 
     def reset(self):
@@ -256,7 +256,7 @@ class ModuleSelectEnv(gym.Env):
         add_term = np.random.normal(loc=0, scale=0.9)
         add_term = round(add_term)
         self.num_proc += add_term
-        self.num_proc = np.clip(self.num_proc, 0, np.inf)
+        self.num_proc = np.clip(self.num_proc, 0, MAX_NUM_PROC)
         return int(self.num_proc)
 
 

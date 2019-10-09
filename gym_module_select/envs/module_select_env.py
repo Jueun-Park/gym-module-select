@@ -11,6 +11,7 @@ from utils.utils import create_test_env, get_saved_hyperparams, ALGOS
 
 PENALTY_WEIGHT = 0.1
 INIT_NUM_PROC = 0
+MAX_NUM_PROC = 11
 CONTROLS_PER_ACTION = 10
 
 
@@ -102,7 +103,6 @@ class ModuleSelectEnv(gym.Env):
                                             dtype=np.float32)
 
     def step(self, action):
-        # TODO:
         ACTION_THRESHOLD = 0.6
         if self.continuous:
             candidates = [i for i, v in enumerate(action) if v >= ACTION_THRESHOLD]
@@ -159,8 +159,12 @@ class ModuleSelectEnv(gym.Env):
         self.episode_reward += reward_sum
         self.driving_score_percent = np.max((self.inner_env.envs[0].env.viewer.handler.driving_score / 10,
                                              self.driving_score_percent))
-        infos[0]["num_proc"] = self.num_proc
-        return [[self.num_proc]], reward_sum, done, infos[0]
+        self._make_one_hot()
+        return self.state, reward_sum, done, infos[0]
+
+    def _make_one_hot(self):
+        self.state = [0 for _ in range(MAX_NUM_PROC)]
+        self.state[self.num_proc] = 1
 
     def reset(self):
         self.inner_obs = self.inner_env.reset()
@@ -181,8 +185,8 @@ class ModuleSelectEnv(gym.Env):
         for i in range(5):
             self.num_use[i] = 0
         self.previous_action = None
-
-        return [[self.num_proc]]
+        self._make_one_hot()
+        return self.state
 
     def render(self, mode='human', close=False):
         result = self.inner_env.render(mode=mode)

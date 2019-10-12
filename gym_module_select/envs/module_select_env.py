@@ -9,7 +9,7 @@ from modules.vae_sac_modules import VAESACModule
 from modules.lane_tracker import LaneTracker
 from utils.utils import create_test_env, get_saved_hyperparams, ALGOS
 
-PENALTY_WEIGHT = 0.1
+PENALTY_WEIGHT = 1
 INIT_NUM_PROC = 0
 MAX_NUM_PROC = 11
 CONTROLS_PER_ACTION = 10
@@ -149,14 +149,12 @@ class ModuleSelectEnv(gym.Env):
                 self.first_flag = False
             else:
                 self.raw_obs = infos[0]['raw_obs']
-            # time_penalty = 0
-            # TODO: remake reward
+
             time_penalty = np.log(self.module_response_times[-1]*50 + 1) * PENALTY_WEIGHT
-            time_penalty = np.clip(time_penalty, 0, reward[0])  # TODO: avoid negative -> not avoid
             reward_sum += reward[0] - time_penalty
 
             if done:
-                # big negative reward
+                reward_sum -= 100
                 break
 
         self.episode_reward += reward_sum
@@ -175,8 +173,7 @@ class ModuleSelectEnv(gym.Env):
         self.raw_obs, _, _, _ = self.inner_env.envs[0].env.viewer.observe()  # first observe
         self.first_flag = True
         
-        if self.verbose == 1:
-            self._print_log()
+        self._print_log()
         if self.save_log_flag:
             self._write_log()
         if self.do_proc_simulation:
@@ -241,15 +238,18 @@ class ModuleSelectEnv(gym.Env):
             pass
 
     def _print_log(self):
-        print("=== Reset ===")
+        if self.verbose == 1:
+            print("=== Reset ===")
         try:
-            print("Driving Score (%): {:.2f}".format(self.driving_score_percent))
-            print("Episode Reward: {:.2f}".format(self.episode_reward))
-            print("Response Time Mean: {:.2f}".format(np.mean(self.module_response_times)))
-            print("Response Time std: {:.2f}".format(np.std(self.module_response_times)))
-            ratios = dict_ratio(self.num_use, self.num_modules)
-            print("Usage Ratio: {:.2f} {:.2f} {:.2f} {:.2f} {:.2f}".format(
-                ratios[0], ratios[1], ratios[2], ratios[3], ratios[4]))
+            if self.verbose > 0:
+                print("Driving Score (%): {:.2f}".format(self.driving_score_percent))
+            if self.verbose == 1:
+                print("Episode Reward: {:.2f}".format(self.episode_reward))
+                print("Response Time Mean: {:.2f}".format(np.mean(self.module_response_times)))
+                print("Response Time std: {:.2f}".format(np.std(self.module_response_times)))
+                ratios = dict_ratio(self.num_use, self.num_modules)
+                print("Usage Ratio: {:.2f} {:.2f} {:.2f} {:.2f} {:.2f}".format(
+                    ratios[0], ratios[1], ratios[2], ratios[3], ratios[4]))
         except AttributeError:
             pass
         except ZeroDivisionError:

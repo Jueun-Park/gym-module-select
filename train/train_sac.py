@@ -62,7 +62,7 @@ if __name__ == "__main__":
     os.makedirs(model_directory, exist_ok=True)
 
     env = gym.make('ModuleSelectContinuous-v1',
-                    verbose=0,
+                    verbose=2,
                     )
     env = Monitor(env, log_directory, allow_early_resets=True)
     env = DummyVecEnv([lambda: env])
@@ -71,8 +71,9 @@ if __name__ == "__main__":
         env=env,
         policy=MlpPolicy,
         verbose=1,
-        tensorboard_log="./onehot+1910+sac_tensorboard/",
+        tensorboard_log="./newrew+1910+sac_tensorboard/",
         batch_size=64,
+        learning_rate=1e-4,
     )
     try:
         model.learn(

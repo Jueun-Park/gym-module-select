@@ -150,9 +150,21 @@ class ModuleSelectEnv(gym.Env):
             else:
                 self.raw_obs = infos[0]['raw_obs']
 
-            time_penalty = 0
+            x = self.num_proc
+            if (x == 0 or x == 1) and action == 4:
+                reward_sum += 1
+            if (x == 2 or x == 3 or x == 6) and action == 3:
+                reward_sum += 1
+            if (x == 4 or x == 7) and action == 0:
+                reward_sum += 1
+            if (x == 5) and action == 2:
+                reward_sum += 1
+            if (x == 8 or x == 9 or x == 10) and action == 1:
+                reward_sum += 1
+
+            # time_penalty = 0
             # time_penalty = np.log(self.module_response_times[-1]*50 + 1) * PENALTY_WEIGHT
-            reward_sum += reward[0] - time_penalty
+            # reward_sum += reward[0] - time_penalty
 
             if done:
                 reward_sum -= 100  # TODO:

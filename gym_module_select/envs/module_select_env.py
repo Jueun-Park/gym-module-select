@@ -9,10 +9,9 @@ from modules.vae_sac_modules import VAESACModule
 from modules.lane_tracker import LaneTracker
 from utils.utils import create_test_env, get_saved_hyperparams, ALGOS
 
-PENALTY_WEIGHT = 1
-INIT_NUM_PROC = 0
+INIT_NUM_PROC = 0  # TODO: 5?
 MAX_NUM_PROC = 11
-CONTROLS_PER_ACTION = 10
+CONTROLS_PER_ACTION = 1
 
 
 directory_names = {0: "0+",
@@ -57,6 +56,7 @@ static_terms = {0: 0.07,
                 7: "",
                 8: "",                
                 }
+
 
 class ModuleSelectEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -103,20 +103,14 @@ class ModuleSelectEnv(gym.Env):
                                             dtype=np.float32)
 
     def step(self, action):
-        ACTION_THRESHOLD = np.mean(action)
-        if self.continuous:
-            candidates = [i for i, v in enumerate(action) if v >= ACTION_THRESHOLD]
-            candidates_value = [v for v in action if v >= ACTION_THRESHOLD]
-            if self.previous_action in candidates:
-                action = self.previous_action
-            else:
-                if candidates:
-                    candidates_value = softmax(candidates_value)
-                    action = int(np.random.choice(candidates, 1, p=candidates_value))
-                else:
-                    action = softmax(action)
-                    action = int(np.random.choice(self.num_modules, 1, p=action))
-            self.previous_action = action
+        ACTION_THRESHOLD = 100  # TODO: find value
+        max_index = np.argmax(action)
+        if np.argmax(action) - self.previous_action[1] < ACTION_THRESHOLD:
+            action = self.previous_action[0]
+        else:
+            self.previous_action = (max_index, action[max_index])
+            action = max_index
+
         reward_sum = 0
         if self.do_proc_simulation:
             self.num_proc = self._simulate_num_proc()
@@ -281,6 +275,7 @@ def check_time(start_time, time_deque: deque):
     end_time = time.time()
     processing_time = end_time - start_time
     time_deque.append(processing_time * 1000)  # ms
+
 
 def dict_ratio(dict_in, num):
     total = 0

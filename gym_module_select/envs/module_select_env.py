@@ -105,7 +105,7 @@ class ModuleSelectEnv(gym.Env):
     def step(self, action):
         ACTION_THRESHOLD = 100  # TODO: find value
         max_index = np.argmax(action)
-        if np.argmax(action) - self.previous_action[1] < ACTION_THRESHOLD:
+        if np.argmax(action) - self.previous_action[1] > ACTION_THRESHOLD:
             action = self.previous_action[0]
         else:
             self.previous_action = (max_index, action[max_index])

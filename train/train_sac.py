@@ -38,9 +38,12 @@ def callback(_locals, _globals):
     :param _globals: (dict)
     """
     global best_mean_reward, n_steps
-    if (n_steps + 1) % 10000 == 0:
-        best_mean_reward = 0  # for saving model by force
-    if (n_steps + 1) % 500 == 0:
+    mean_reward = 0
+    if (n_steps + 1) % 100000 == 0:
+        print("Saving new best model")
+        _locals['self'].save(
+            model_directory + 'sac-model_' + str(n_steps + 1) + '.pkl')
+    if (n_steps + 1) % 1000 == 0:
         x, y = ts2xy(load_results(log_directory), 'timesteps')
         if len(x) > 0:
             mean_reward = numpy.mean(y[-100:])
@@ -71,9 +74,8 @@ if __name__ == "__main__":
         env=env,
         policy=MlpPolicy,
         verbose=1,
-        tensorboard_log="./newrew+1910+sac_tensorboard/",
+        tensorboard_log="./cpa1+1910+sac_tensorboard/",
         batch_size=64,
-        learning_rate=1e-4,
     )
     try:
         model.learn(

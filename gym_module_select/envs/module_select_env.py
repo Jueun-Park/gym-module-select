@@ -155,13 +155,14 @@ class ModuleSelectEnv(gym.Env):
             reward_sum += reward[0] - time_penalty
 
             if done:
-                reward_sum -= 100  # TODO:
                 break
 
         self.episode_reward += reward_sum
         self.driving_score_percent = np.max((self.inner_env.envs[0].env.viewer.handler.driving_score / 10,
                                              self.driving_score_percent))
         self._make_one_hot()
+        # if done and self.driving_score_percent >= 90:
+        #     reward_sum += self.driving_score_percent
         return self.state, reward_sum, done, infos[0]
 
     def _make_one_hot(self):

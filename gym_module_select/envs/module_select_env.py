@@ -103,11 +103,14 @@ class ModuleSelectEnv(gym.Env):
                                             dtype=np.float32)
 
     def step(self, action):
-        ACTION_THRESHOLD = 100  # TODO: find value
+        ACTION_THRESHOLD = 0.3  # TODO: find value
         max_index = np.argmax(action)
-        if np.argmax(action) - self.previous_action[1] > ACTION_THRESHOLD:
+        diff = action[max_index] - self.previous_action[1]
+        # do not change previous action, just action value update
+        if max_index == self.previous_action[0] or diff < ACTION_THRESHOLD:
+            self.previous_action = (self.previous_action[0], action[self.previous_action[0]])
             action = self.previous_action[0]
-        else:
+        else:  # change action to argmax
             self.previous_action = (max_index, action[max_index])
             action = max_index
 
@@ -180,7 +183,7 @@ class ModuleSelectEnv(gym.Env):
         self.num_use = {}
         for i in range(5):
             self.num_use[i] = 0
-        self.previous_action = (0, 0)
+        self.previous_action = (0, -1)
         self._make_one_hot()
         return self.state
 

@@ -99,20 +99,21 @@ class ModuleSelectEnv(gym.Env):
 
         self.observation_space = spaces.Box(low=np.finfo(np.float32).min,
                                             high=np.finfo(np.float32).max,
-                                            shape=(1, MAX_NUM_PROC+1, ),  # 0 to 11, total 12 dim
+                                            shape=(1, ),  # 0 to 11, total 12 dim
                                             dtype=np.float32)
 
     def step(self, action):
-        ACTION_THRESHOLD = 0.3  # TODO: find value
-        max_index = np.argmax(action)
-        diff = action[max_index] - self.previous_action[1]
-        # do not change previous action, just action value update
-        if max_index == self.previous_action[0] or diff < ACTION_THRESHOLD:
-            self.previous_action = (self.previous_action[0], action[self.previous_action[0]])
-            action = self.previous_action[0]
-        else:  # change action to argmax
-            self.previous_action = (max_index, action[max_index])
-            action = max_index
+        # ACTION_THRESHOLD = 0.3  # TODO: find value
+        # max_index = np.argmax(action)
+        # diff = action[max_index] - self.previous_action[1]
+        # # do not change previous action, just action value update
+        # if max_index == self.previous_action[0] or diff < ACTION_THRESHOLD:
+        #     self.previous_action = (self.previous_action[0], action[self.previous_action[0]])
+        #     action = self.previous_action[0]
+        # else:  # change action to argmax
+        #     self.previous_action = (max_index, action[max_index])
+        #     action = max_index
+        action = np.argmax(action)
 
         reward_sum = 0
         if self.do_proc_simulation:
@@ -157,10 +158,10 @@ class ModuleSelectEnv(gym.Env):
         self.episode_reward += reward_sum
         self.driving_score_percent = np.max((self.inner_env.envs[0].env.viewer.handler.driving_score / 10,
                                              self.driving_score_percent))
-        self._make_one_hot()
+        # self._make_one_hot()
         if done:
             reward_sum += self.driving_score_percent
-        return self.state, reward_sum, done, infos[0]
+        return [self.num_proc], reward_sum, done, infos[0]
 
     def _make_one_hot(self):
         self.state = [0 for _ in range(MAX_NUM_PROC+1)]  # 12 dim
@@ -185,7 +186,7 @@ class ModuleSelectEnv(gym.Env):
             self.num_use[i] = 0
         self.previous_action = (0, -1)
         self._make_one_hot()
-        return self.state
+        return [self.num_proc]
 
     def render(self, mode='human', close=False):
         result = self.inner_env.render(mode=mode)

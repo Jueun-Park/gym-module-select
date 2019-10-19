@@ -74,7 +74,7 @@ if __name__ == "__main__":
         env=env,
         policy=MlpPolicy,
         verbose=1,
-        tensorboard_log="./s1v+1910+sac_tensorboard/",
+        tensorboard_log="./sps+1910+sac_tensorboard/",
         batch_size=64,
     )
     try:

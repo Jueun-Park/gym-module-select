@@ -12,6 +12,7 @@ from utils.utils import create_test_env, get_saved_hyperparams, ALGOS
 INIT_NUM_PROC = 0  # TODO: 5?
 MAX_NUM_PROC = 11
 CONTROLS_PER_ACTION = 1
+STEPS_PER_SIMULATION = 10
 
 
 directory_names = {0: "0+",
@@ -116,8 +117,10 @@ class ModuleSelectEnv(gym.Env):
         action = np.argmax(action)
 
         reward_sum = 0
-        if self.do_proc_simulation:
+        self.simul_count += 1
+        if self.do_proc_simulation and self.simul_count == STEPS_PER_SIMULATION:
             self.num_proc = self._simulate_num_proc()
+            self.simul_count = 0
         for _ in range(CONTROLS_PER_ACTION):
             start_time = time.time()
             if action == 0:
@@ -185,7 +188,8 @@ class ModuleSelectEnv(gym.Env):
         for i in range(5):
             self.num_use[i] = 0
         self.previous_action = (0, -1)
-        self._make_one_hot()
+        # self._make_one_hot()
+        self.simul_count = 0
         return [self.num_proc]
 
     def render(self, mode='human', close=False):

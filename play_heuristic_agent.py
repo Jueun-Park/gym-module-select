@@ -30,12 +30,14 @@ try:
             action = [3]
         elif num_proc == 5:
             action = [2]
-        elif 8 <= num_proc <= 10:
+        elif 8 <= num_proc <= 11:
             action = [1]
         elif num_proc == 4 or num_proc == 7:
             action = [0]
+        else:
+            print("action error")
         obs, rewards, dones, info = env.step(action)
-        num_proc = info[0]["num_proc"]
+        num_proc = int(obs[0][0])
         env.render()
         if dones[0]:
             num_done += 1

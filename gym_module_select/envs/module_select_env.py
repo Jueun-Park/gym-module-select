@@ -88,6 +88,7 @@ class ModuleSelectEnv(gym.Env):
                 self.num_use[0] += 1
                 inner_action = self.day_module.predict(self.inner_obs, deterministic=True)
             elif action == 1:
+                time.sleep(0.045 + np.random.normal(0, 0.001))
                 self.num_use[1] += 1
                 inner_action = self.night_module.predict(self.inner_obs, deterministic=True)
             else:

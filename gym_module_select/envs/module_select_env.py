@@ -114,7 +114,8 @@ class ModuleSelectEnv(gym.Env):
         # else:  # change action to argmax
         #     self.previous_action = (max_index, action[max_index])
         #     action = max_index
-        action = np.argmax(action)
+        if self.continuous:
+            action = np.argmax(action)
 
         reward_sum = 0
         self.simul_count += 1

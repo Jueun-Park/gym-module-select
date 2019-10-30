@@ -7,7 +7,6 @@ from collections import deque
 
 from utils.utils import create_test_env, get_saved_hyperparams, ALGOS, load_vae
 
-PENALTY_WEIGHT = 0.1
 CONTROLS_PER_ACTION = 10
 
 
@@ -63,20 +62,21 @@ class ModuleSelectEnv(gym.Env):
 
     def step(self, action):
         # TODO:
-        ACTION_THRESHOLD = 0.6
+        # ACTION_THRESHOLD = 0.6
         if self.continuous:
-            candidates = [i for i, v in enumerate(action) if v >= ACTION_THRESHOLD]
-            candidates_value = [v for v in action if v >= ACTION_THRESHOLD]
-            if self.previous_action in candidates:
-                action = self.previous_action
-            else:
-                if candidates:
-                    candidates_value = softmax(candidates_value)
-                    action = int(np.random.choice(candidates, 1, p=candidates_value))
-                else:
-                    action = softmax(action)
-                    action = int(np.random.choice(self.num_modules, 1, p=action))
-            self.previous_action = action
+            # candidates = [i for i, v in enumerate(action) if v >= ACTION_THRESHOLD]
+            # candidates_value = [v for v in action if v >= ACTION_THRESHOLD]
+            # if self.previous_action in candidates:
+            #     action = self.previous_action
+            # else:
+            #     if candidates:
+            #         candidates_value = softmax(candidates_value)
+            #         action = int(np.random.choice(candidates, 1, p=candidates_value))
+            #     else:
+            #         action = softmax(action)
+            #         action = int(np.random.choice(self.num_modules, 1, p=action))
+            # self.previous_action = action
+            action = np.argmax(action)
         reward_sum = 0
         if action == 0:
             self.inner_env.envs[0].set_vae(self.day_vae)
@@ -103,7 +103,8 @@ class ModuleSelectEnv(gym.Env):
         self.episode_reward += reward_sum
         self.driving_score_percent = np.max((self.inner_env.envs[0].env.viewer.handler.driving_score / 10,
                                              self.driving_score_percent))
-
+        if done:
+            reward_sum += self.driving_score_percent
         # TODO: what obs to give the agent?
         return infos[0]['encoded_obs'], reward_sum, done, infos[0]
 

@@ -27,8 +27,8 @@ best_mean_reward = -numpy.inf
 n_steps = 0
 args = init_parse_argument()
 datestr = time.strftime("%Y%m%d")
-log_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-log-" + args.id + "-" +  datestr + "/"
-model_directory = os.path.dirname(os.path.realpath(__file__)) + "/sac-models-" + args.id + "-" + datestr + "/"
+log_directory = os.path.dirname(os.path.realpath(__file__)) + "/dn-sac-log-" + args.id + "-" +  datestr + "/"
+model_directory = os.path.dirname(os.path.realpath(__file__)) + "/dn-sac-models-" + args.id + "-" + datestr + "/"
 
 
 def callback(_locals, _globals):
@@ -40,6 +40,8 @@ def callback(_locals, _globals):
     global best_mean_reward, n_steps
     if (n_steps + 1) % 10000 == 0:
         best_mean_reward = 0  # for saving model by force
+        # controls per step = 10 : save each 500 steps
+        # 1 : 1000 (maybe..?..)
     if (n_steps + 1) % 500 == 0:
         x, y = ts2xy(load_results(log_directory), 'timesteps')
         if len(x) > 0:
@@ -71,7 +73,7 @@ if __name__ == "__main__":
         env=env,
         policy=MlpPolicy,
         verbose=1,
-        tensorboard_log="./sac_tensorboard/",
+        tensorboard_log="./daynight_sac_tensorboard/",
         batch_size=64,
     )
     try:

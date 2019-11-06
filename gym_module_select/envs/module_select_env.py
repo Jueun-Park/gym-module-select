@@ -12,8 +12,9 @@ CONTROLS_PER_ACTION = 10
 
 directory_names = {0: "0+day",
                    1: "1+night",
-                   2: "day-night-random-agent+",
-                   3: "dn-sac-agent+",
+                   2: "2+sunset",
+                   3: "dns-random-agent+",
+                   4: "dns-sac-agent+",
                    }
 
 
@@ -43,13 +44,17 @@ class ModuleSelectEnv(gym.Env):
         self.day_vae = load_vae(day_vae_path)
         night_vae_path = "modules/logs_n/vae-32_best.pkl"
         self.night_vae = load_vae(night_vae_path)
+        sunset_vae_path = "modules/logs_sunset/vae-32.pkl"
+        self.sunset_vae = load_vae(sunset_vae_path)
 
         day_model_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0.pkl"
         self.day_module = ALGOS["sac"].load(day_model_path)
         night_model_path = "modules/logs_n/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best.pkl"
-        self.night_module = ALGOS["sac"].load(night_model_path)        
+        self.night_module = ALGOS["sac"].load(night_model_path)
+        sunset_model_path = "modules/logs_sunset/sac/DonkeyVae-v0-level-0_2/DonkeyVae-v0-level-0_best.pkl"
+        self.sunset_module = ALGOS["sac"].load(sunset_model_path)
 
-        self.num_modules = 2
+        self.num_modules = 3
 
         if self.continuous:
             self.action_space = spaces.Box(low=-1, high=1, shape=(self.num_modules, ))
@@ -62,27 +67,15 @@ class ModuleSelectEnv(gym.Env):
                                             dtype=np.float32)
 
     def step(self, action):
-        # TODO:
-        # ACTION_THRESHOLD = 0.6
         if self.continuous:
-            # candidates = [i for i, v in enumerate(action) if v >= ACTION_THRESHOLD]
-            # candidates_value = [v for v in action if v >= ACTION_THRESHOLD]
-            # if self.previous_action in candidates:
-            #     action = self.previous_action
-            # else:
-            #     if candidates:
-            #         candidates_value = softmax(candidates_value)
-            #         action = int(np.random.choice(candidates, 1, p=candidates_value))
-            #     else:
-            #         action = softmax(action)
-            #         action = int(np.random.choice(self.num_modules, 1, p=action))
-            # self.previous_action = action
             action = np.argmax(action)
         reward_sum = 0
         if action == 0:
             self.inner_env.envs[0].set_vae(self.day_vae)
         elif action == 1:
             self.inner_env.envs[0].set_vae(self.night_vae)
+        elif action == 2:
+            self.inner_env.envs[0].set_vae(self.sunset_vae)
         for _ in range(CONTROLS_PER_ACTION):
             start_time = time.time()
             if action == 0:
@@ -92,6 +85,9 @@ class ModuleSelectEnv(gym.Env):
                 time.sleep(0.045 + np.random.normal(0, 0.001))
                 self.num_use[1] += 1
                 inner_action = self.night_module.predict(self.inner_obs, deterministic=True)
+            elif action == 2:
+                self.num_use[2] += 1
+                inner_action = self.sunset_module.predict(self.inner_obs, deterministic=True)
             else:
                 print("action error")
             if isinstance(self.inner_env.envs[0].env.action_space, gym.spaces.Box):
@@ -153,6 +149,7 @@ class ModuleSelectEnv(gym.Env):
                                   "response time mean",
                                   "usage ratio 0",
                                   "usage ratio 1",
+                                  "usage ratio 2",
                                   ])
     
     def _write_log(self):
@@ -161,7 +158,7 @@ class ModuleSelectEnv(gym.Env):
             self.csv_writer.writerow([self.driving_score_percent,
                                       self.episode_reward,
                                       np.mean(self.response_times),
-                                      ratios[0], ratios[1],
+                                      ratios[0], ratios[1], ratios[2],
                                     ])
             self.csv_file.flush()
         except:

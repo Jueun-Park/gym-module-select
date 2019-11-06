@@ -3,6 +3,7 @@
 unitylog.txt
 load_log.txt
 logs_n
+logs_sunset
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

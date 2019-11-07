@@ -14,6 +14,7 @@ directory_names = {0: "0+day",
                    1: "1+night",
                    2: "day-night-random-agent+",
                    3: "dn-sac-agent+",
+                   120: "full-daynight-model+",
                    }
 
 
@@ -21,14 +22,13 @@ class ModuleSelectEnv(gym.Env):
     metadata = {'render.modes': ['human']}
     continuous = False
 
-    def __init__(self, verbose=0, save_log_flag=False, log_num=None, do_proc_simulation=True, custom_num_proc=0):
+    def __init__(self, verbose=0, save_log_flag=False, log_num=None, use_full_daynight_model=False):
         super(ModuleSelectEnv, self).__init__()
         self.verbose = verbose
         self.save_log_flag = save_log_flag
         if self.save_log_flag and log_num is not None:
             self._init_log_to_write(log_num)
-        self.do_proc_simulation = do_proc_simulation
-        self.num_proc = custom_num_proc
+        self.use_full_daynight_model = use_full_daynight_model
 
         stats_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0"
         hyperparams, stats_path = get_saved_hyperparams(stats_path,
@@ -39,15 +39,22 @@ class ModuleSelectEnv(gym.Env):
                                         log_dir="modules/logs",
                                         hyperparams=hyperparams)
 
-        day_vae_path = "modules/logs/vae-level-0-dim-32.pkl"
-        self.day_vae = load_vae(day_vae_path)
-        night_vae_path = "modules/logs_n/vae-32_best.pkl"
-        self.night_vae = load_vae(night_vae_path)
+        if self.use_full_daynight_model:
+            # the model trained in discrete light changing env
+            full_vae_path = "modules/logs_daynight/vae-32.pkl"
+            self.full_vae = load_vae(full_vae_path)
+            full_model_path = "modules/logs_daynight/sac/DonkeyVae-v0-level-0_4/DonkeyVae-v0-level-0_best.pkl"
+            self.full_model = ALGOS["sac"].load(full_model_path)
+        else:
+            day_vae_path = "modules/logs/vae-level-0-dim-32.pkl"
+            self.day_vae = load_vae(day_vae_path)
+            night_vae_path = "modules/logs_n/vae-32_best.pkl"
+            self.night_vae = load_vae(night_vae_path)
 
-        day_model_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0.pkl"
-        self.day_module = ALGOS["sac"].load(day_model_path)
-        night_model_path = "modules/logs_n/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best.pkl"
-        self.night_module = ALGOS["sac"].load(night_model_path)        
+            day_model_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0.pkl"
+            self.day_module = ALGOS["sac"].load(day_model_path)
+            night_model_path = "modules/logs_n/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best.pkl"
+            self.night_module = ALGOS["sac"].load(night_model_path)        
 
         self.num_modules = 2
 
@@ -62,38 +69,29 @@ class ModuleSelectEnv(gym.Env):
                                             dtype=np.float32)
 
     def step(self, action):
-        # TODO:
-        # ACTION_THRESHOLD = 0.6
         if self.continuous:
-            # candidates = [i for i, v in enumerate(action) if v >= ACTION_THRESHOLD]
-            # candidates_value = [v for v in action if v >= ACTION_THRESHOLD]
-            # if self.previous_action in candidates:
-            #     action = self.previous_action
-            # else:
-            #     if candidates:
-            #         candidates_value = softmax(candidates_value)
-            #         action = int(np.random.choice(candidates, 1, p=candidates_value))
-            #     else:
-            #         action = softmax(action)
-            #         action = int(np.random.choice(self.num_modules, 1, p=action))
-            # self.previous_action = action
             action = np.argmax(action)
         reward_sum = 0
         if action == 0:
             self.inner_env.envs[0].set_vae(self.day_vae)
         elif action == 1:
             self.inner_env.envs[0].set_vae(self.night_vae)
+        elif self.use_full_daynight_model:
+            self.inner_env.envs[0].set_vae(self.full_vae)
         for _ in range(CONTROLS_PER_ACTION):
             start_time = time.time()
-            if action == 0:
-                self.num_use[0] += 1
-                inner_action = self.day_module.predict(self.inner_obs, deterministic=True)
-            elif action == 1:
-                time.sleep(0.045 + np.random.normal(0, 0.001))
-                self.num_use[1] += 1
-                inner_action = self.night_module.predict(self.inner_obs, deterministic=True)
+            if self.use_full_daynight_model:
+                inner_action = self.full_model.predict(self.inner_obs, deterministic=True)
             else:
-                print("action error")
+                if action == 0:
+                    self.num_use[0] += 1
+                    inner_action = self.day_module.predict(self.inner_obs, deterministic=True)
+                elif action == 1:
+                    time.sleep(0.045 + np.random.normal(0, 0.001))
+                    self.num_use[1] += 1
+                    inner_action = self.night_module.predict(self.inner_obs, deterministic=True)
+                else:
+                    print("action error")
             if isinstance(self.inner_env.envs[0].env.action_space, gym.spaces.Box):
                 inner_action = np.clip(inner_action[0], self.inner_env.envs[0].env.action_space.low, self.inner_env.envs[0].env.action_space.high)
             check_time(start_time, self.response_times)
@@ -125,7 +123,10 @@ class ModuleSelectEnv(gym.Env):
         self.previous_action = None
 
         self._, _, _, infos = self.inner_env.envs[0].env.observe()
-        self.inner_env.envs[0].set_vae(self.day_vae)
+        if self.use_full_daynight_model:
+            self.inner_env.envs[0].set_vae(self.full_vae)
+        else:
+            self.inner_env.envs[0].set_vae(self.day_vae)
         return infos['encoded_obs']
 
     def render(self, mode='human', close=False):
@@ -164,8 +165,8 @@ class ModuleSelectEnv(gym.Env):
                                       ratios[0], ratios[1],
                                     ])
             self.csv_file.flush()
-        except:
-            pass
+        except Exception as e:
+            print(e)
 
     def _print_log(self):
         print("=== Reset ===")
@@ -205,5 +206,8 @@ def dict_ratio(dict_in, num):
         total += dict_in[i]
     result = []
     for i in range(num):
-        result.append(dict_in[i] / total)
+        if total == 0:
+            result.append(0)
+        else:
+            result.append(dict_in[i] / total)
     return result

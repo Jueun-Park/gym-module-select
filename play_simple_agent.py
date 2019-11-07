@@ -16,14 +16,22 @@ def init_parse_argument():
 
 args = init_parse_argument()
 
+if args.module == 120:  # 120 means using full daynight model
+    action = [120]
+    full_flag = True
+else:
+    action = [args.module]
+    full_flag = False
+
 env = gym.make('ModuleSelect-v1',
-               verbose=1,
-               save_log_flag=True,
-               log_num=args.module,
-               )
+                verbose=1,
+                save_log_flag=True,
+                log_num=args.module,
+                use_full_daynight_model=full_flag,
+                )
+
 env = DummyVecEnv([lambda: env])
 num_done = 0
-action = [args.module]
 try:
     obs = env.reset()
     while num_done < args.num_exp:

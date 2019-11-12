@@ -41,9 +41,9 @@ class ModuleSelectEnv(gym.Env):
 
         if self.use_full_daynight_model:
             # the model trained in discrete light changing env
-            full_vae_path = "modules/logs_daynight/vae-32.pkl"
+            full_vae_path = "modules/logs_daynight_full/vae-32.pkl"
             self.full_vae = load_vae(full_vae_path)
-            full_model_path = "modules/logs_daynight/sac/DonkeyVae-v0-level-0_4/DonkeyVae-v0-level-0_best.pkl"
+            full_model_path = "modules/logs_daynight_full/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best.pkl"
             self.full_model = ALGOS["sac"].load(full_model_path)
         else:
             day_vae_path = "modules/logs/vae-level-0-dim-32.pkl"

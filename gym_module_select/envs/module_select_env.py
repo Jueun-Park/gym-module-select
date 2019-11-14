@@ -78,8 +78,12 @@ class ModuleSelectEnv(gym.Env):
             self.inner_env.envs[0].set_vae(self.full_vae)
         for _ in range(CONTROLS_PER_ACTION):
             start_time = time.time()
-            if self.use_full_daynight_model:
-                inner_action = self.full_model.predict(self.inner_obs, deterministic=True)
+            if action == 0:
+                self.num_use[0] += 1
+                inner_action = self.day_module.predict(self.inner_obs, deterministic=True)
+            elif action == 1:
+                self.num_use[1] += 1
+                inner_action = self.night_module.predict(self.inner_obs, deterministic=True)
             else:
                 if action == 0:
                     self.num_use[0] += 1

@@ -74,6 +74,7 @@ if __name__ == "__main__":
         verbose=1,
         tensorboard_log="./daynight_dqn_tensorboard/",
         batch_size=32,
+        prioritized_replay=True,
     )
     try:
         model.learn(

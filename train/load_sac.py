@@ -29,7 +29,7 @@ log_file.write(timestr + args.model + "\n")
 
 env = gym.make('ModuleSelectContinuous-v1',
                 save_log_flag=args.log,
-                log_num=3,
+                log_num=8,
                 )
 env = DummyVecEnv([lambda: env])
 model = SAC.load(model_name)

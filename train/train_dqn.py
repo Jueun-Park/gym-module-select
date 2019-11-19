@@ -12,13 +12,13 @@ from stable_baselines.bench import Monitor
 from stable_baselines.results_plotter import load_results, ts2xy
 from stable_baselines import DQN
 
-TIMESTEPS = int(1e8) + 1
-
 
 def init_parse_argument():
     parser = argparse.ArgumentParser()
     timestr = time.strftime("%H%M%S")
     parser.add_argument('-i', '--id', help='nickname of the train', type=str, default=timestr)
+    parser.add_argument('-l', '--learning-rate', help='learning rate', type=float, default=2e-4)
+    parser.add_argument('-t', '--timesteps', help='timesteps', type=int, default=100000001)
     args = parser.parse_args()
     return args
 
@@ -27,8 +27,10 @@ best_mean_reward = -numpy.inf
 n_steps = 0
 args = init_parse_argument()
 datestr = time.strftime("%Y%m%d")
-log_directory = os.path.dirname(os.path.realpath(__file__)) + "/dn-dqn-log-" + args.id + "-" +  datestr + "/"
-model_directory = os.path.dirname(os.path.realpath(__file__)) + "/dn-dqn-models-" + args.id + "-" + datestr + "/"
+log_directory = os.path.dirname(os.path.realpath(__file__)) + "/lr-dn-dqn-log-" + args.id + "-" +  datestr + "/"
+model_directory = os.path.dirname(os.path.realpath(__file__)) + "/lr-dn-dqn-models-" + args.id + "-" + datestr + "/"
+
+TIMESTEPS = args.timesteps
 
 
 def callback(_locals, _globals):
@@ -72,14 +74,18 @@ if __name__ == "__main__":
         env=env,
         policy=MlpPolicy,
         verbose=1,
-        tensorboard_log="./daynight_dqn_tensorboard/",
+        tensorboard_log="./lr_daynight_dqn_tensorboard/",
         batch_size=32,
         prioritized_replay=True,
+        learning_rate=args.learning_rate,
     )
+    print("Learning Rate:", args.learning_rate)
     try:
         model.learn(
             total_timesteps=TIMESTEPS,
             callback=callback
         )
     except KeyboardInterrupt:
+        pass
+    finally:
         env.envs[0].env.close()

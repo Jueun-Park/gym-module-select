@@ -13,6 +13,8 @@ CONTROLS_PER_ACTION = 10
 directory_names = {0: "0+day",
                    1: "1+night",
                    2: "day-night-random-agent+",
+                   3: "sac-agent+",
+                   4: "dqn-agent+",
                    }
 
 

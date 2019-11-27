@@ -35,7 +35,7 @@ num_done = 0
 try:
     obs = env.reset()
     while num_done < args.num_exp:
-        if args.module == 2:
+        if args.module == 4:
             action = [env.envs[0].action_space.sample()]
         obs, rewards, dones, info = env.step(action)
         env.render()

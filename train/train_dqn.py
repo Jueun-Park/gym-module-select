@@ -27,8 +27,8 @@ best_mean_reward = -numpy.inf
 n_steps = 0
 args = init_parse_argument()
 datestr = time.strftime("%Y%m%d")
-log_directory = os.path.dirname(os.path.realpath(__file__)) + "/lr-dn-dqn-log-" + args.id + "-" +  datestr + "/"
-model_directory = os.path.dirname(os.path.realpath(__file__)) + "/lr-dn-dqn-models-" + args.id + "-" + datestr + "/"
+log_directory = os.path.dirname(os.path.realpath(__file__)) + "/dncf-dqn-log-" + args.id + "-" +  datestr + "/"
+model_directory = os.path.dirname(os.path.realpath(__file__)) + "/dncf-dqn-models-" + args.id + "-" + datestr + "/"
 
 TIMESTEPS = args.timesteps
 
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         env=env,
         policy=MlpPolicy,
         verbose=1,
-        tensorboard_log="./lr_daynight_dqn_tensorboard/",
+        tensorboard_log="./dncf_dqn_tensorboard/",
         batch_size=32,
         prioritized_replay=True,
         learning_rate=args.learning_rate,

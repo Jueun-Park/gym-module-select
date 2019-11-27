@@ -7,14 +7,15 @@ from collections import deque
 
 from utils.utils import create_test_env, get_saved_hyperparams, ALGOS, load_vae
 
-CONTROLS_PER_ACTION = 10
+CONTROLS_PER_ACTION = 1
 
-
-directory_names = {0: "0+day",
-                   1: "1+night",
-                   2: "day-night-random-agent+",
-                   3: "sac-agent+",
-                   4: "dqn-agent+",
+LOG_DIR = "/result_dncf/"
+directory_names = {0: "0+day-clear",
+                   1: "1+day-fog",
+                   2: "2+night-clear",
+                   3: "3+night-fog",
+                   4: "random-agent+",
+                   5: "dqn-agent+",
                    }
 
 
@@ -30,33 +31,42 @@ class ModuleSelectEnv(gym.Env):
             self._init_log_to_write(log_num)
         self.use_full_daynight_model = use_full_daynight_model
 
-        stats_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0"
+        stats_path = "modules/logs_dc/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0"
         hyperparams, stats_path = get_saved_hyperparams(stats_path,
                                                     norm_reward=False)
-        hyperparams['vae_path'] = "modules/logs_n/vae-32_best.pkl"
+        hyperparams['vae_path'] = "modules/logs_dc/vae-32.pkl"
         self.inner_env = create_test_env(stats_path=stats_path,
                                         seed=0,
-                                        log_dir="modules/logs",
+                                        log_dir="modules/logs_dc",
                                         hyperparams=hyperparams)
 
         if self.use_full_daynight_model:
+            # TODO: not yet in dncf
             # the model trained in discrete light changing env
             full_vae_path = "modules/logs_daynight_full/vae-32.pkl"
             self.full_vae = load_vae(full_vae_path)
             full_model_path = "modules/logs_daynight_full/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best.pkl"
             self.full_model = ALGOS["sac"].load(full_model_path)
         else:
-            day_vae_path = "modules/logs/vae-level-0-dim-32.pkl"
-            self.day_vae = load_vae(day_vae_path)
-            night_vae_path = "modules/logs_n/vae-32_best.pkl"
-            self.night_vae = load_vae(night_vae_path)
+            dc_vae_path = "modules/logs_dc/vae-32.pkl"
+            self.dc_vae = load_vae(dc_vae_path)
+            df_vae_path = "modules/logs_df/vae-32.pkl"
+            self.df_vae = load_vae(df_vae_path)
+            nc_vae_path = "modules/logs_nc/vae-32.pkl"
+            self.nc_vae = load_vae(nc_vae_path)
+            nf_vae_path = "modules/logs_nf/vae-32.pkl"
+            self.nf_vae = load_vae(nf_vae_path)
 
-            day_model_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0.pkl"
-            self.day_module = ALGOS["sac"].load(day_model_path)
-            night_model_path = "modules/logs_n/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best.pkl"
-            self.night_module = ALGOS["sac"].load(night_model_path)        
+            dc_module_path = "modules/logs_dc/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best_63374.zip"  # ? 55-99%
+            self.dc_module = ALGOS["sac"].load(dc_module_path)
+            df_module_path = "modules/logs_df/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best_63762.zip"  # ? 15-16%
+            self.df_module = ALGOS["sac"].load(df_module_path)
+            nc_module_path = "modules/logs_nc/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best_61638.zip"  # ? 30-97%
+            self.nc_module = ALGOS["sac"].load(nc_module_path)
+            nf_module_path = "modules/logs_nf/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best_62744.zip"  # ? 31-61%
+            self.nf_module = ALGOS["sac"].load(nf_module_path)
 
-        self.num_modules = 2
+        self.num_modules = 4
 
         if self.continuous:
             self.action_space = spaces.Box(low=-1, high=1, shape=(self.num_modules, ))
@@ -72,30 +82,37 @@ class ModuleSelectEnv(gym.Env):
         if self.continuous:
             action = np.argmax(action)
         reward_sum = 0
+
         if action == 0:
-            self.inner_env.envs[0].set_vae(self.day_vae)
+            self.inner_env.envs[0].set_vae(self.dc_vae)
         elif action == 1:
-            self.inner_env.envs[0].set_vae(self.night_vae)
+            self.inner_env.envs[0].set_vae(self.df_vae)
+        elif action == 2:
+            self.inner_env.envs[0].set_vae(self.nc_vae)
+        elif action == 3:
+            self.inner_env.envs[0].set_vae(self.nf_vae)
         elif self.use_full_daynight_model:
             self.inner_env.envs[0].set_vae(self.full_vae)
+
         for _ in range(CONTROLS_PER_ACTION):
             start_time = time.time()
             if action == 0:
                 self.num_use[0] += 1
-                inner_action = self.day_module.predict(self.inner_obs, deterministic=True)
+                inner_action = self.dc_module.predict(self.inner_obs, deterministic=True)
             elif action == 1:
                 self.num_use[1] += 1
-                inner_action = self.night_module.predict(self.inner_obs, deterministic=True)
+                inner_action = self.df_module.predict(self.inner_obs, deterministic=True)
+            elif action == 2:
+                self.num_use[2] += 1
+                inner_action = self.nc_module.predict(self.inner_obs, deterministic=True)
+            elif action == 3:
+                self.num_use[1] += 1
+                inner_action = self.nf_module.predict(self.inner_obs, deterministic=True)
+            elif self.use_full_daynight_model:
+                # TODO: full model
+                pass
             else:
-                if action == 0:
-                    self.num_use[0] += 1
-                    inner_action = self.day_module.predict(self.inner_obs, deterministic=True)
-                elif action == 1:
-                    time.sleep(0.045 + np.random.normal(0, 0.001))
-                    self.num_use[1] += 1
-                    inner_action = self.night_module.predict(self.inner_obs, deterministic=True)
-                else:
-                    print("action error")
+                print("action error")
             if isinstance(self.inner_env.envs[0].env.action_space, gym.spaces.Box):
                 inner_action = np.clip(inner_action[0], self.inner_env.envs[0].env.action_space.low, self.inner_env.envs[0].env.action_space.high)
             check_time(start_time, self.response_times)
@@ -109,7 +126,6 @@ class ModuleSelectEnv(gym.Env):
                                              self.driving_score_percent))
         if done:
             reward_sum += self.driving_score_percent
-        # TODO: what obs to give the agent?
         return infos[0]['encoded_obs'], reward_sum, done, infos[0]
 
     def reset(self):
@@ -130,7 +146,7 @@ class ModuleSelectEnv(gym.Env):
         if self.use_full_daynight_model:
             self.inner_env.envs[0].set_vae(self.full_vae)
         else:
-            self.inner_env.envs[0].set_vae(self.day_vae)
+            self.inner_env.envs[0].set_vae(self.dc_vae)
         return infos['encoded_obs']
 
     def render(self, mode='human', close=False):
@@ -147,7 +163,7 @@ class ModuleSelectEnv(gym.Env):
         timestr = time.strftime("%Y%m%d-%H%M%S")
         root_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
         root_dir = os.path.abspath(os.path.join(root_dir, ".."))
-        file_name = root_dir + "/result/" + directory_names[simulate_num] + "/"
+        file_name = root_dir + LOG_DIR + directory_names[simulate_num] + "/"
         os.makedirs(file_name, exist_ok=True)
         file_name += directory_names[simulate_num] + timestr + ".csv"
         print(">>> save csv log file: ", file_name)
@@ -158,6 +174,8 @@ class ModuleSelectEnv(gym.Env):
                                   "response time mean",
                                   "usage ratio 0",
                                   "usage ratio 1",
+                                  "usage ratio 2",
+                                  "usage ratio 3",
                                   ])
     
     def _write_log(self):
@@ -167,6 +185,7 @@ class ModuleSelectEnv(gym.Env):
                                       self.episode_reward,
                                       np.mean(self.response_times),
                                       ratios[0], ratios[1],
+                                      ratios[2], ratios[3],
                                     ])
             self.csv_file.flush()
         except Exception as e:
@@ -179,7 +198,7 @@ class ModuleSelectEnv(gym.Env):
             print("Episode Reward: {:.2f}".format(self.episode_reward))
             print("Response Time: {:.2f}".format(np.mean(self.response_times)))
             ratios = dict_ratio(self.num_use, self.num_modules)
-            print("Usage Ratio: {:.2f} {:.2f}".format(ratios[0], ratios[1]))
+            print("Usage Ratio: {:.2f} {:.2f} {:.2f} {:.2f}".format(ratios[0], ratios[1], ratios[2], ratios[3]))
         except AttributeError:
             pass
         except ZeroDivisionError:

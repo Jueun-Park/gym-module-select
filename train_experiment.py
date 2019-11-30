@@ -1,6 +1,7 @@
 import os
 
-timesteps = 70001  # about: 10h 30m * 4 = 42h
+timesteps = 70001  # about: 10h 30m * 4 = 42h (cpa-10)
+# or... about 4h (cpa=1)
 # timesteps = 11
 lr_list = [1e-4, 2e-4, 3e-4, 4e-4]
 for lr in lr_list:

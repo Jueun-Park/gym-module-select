@@ -44,7 +44,7 @@ def callback(_locals, _globals):
         best_mean_reward = 0  # for saving model by force
         # controls per step = 10 : save each 500 steps
         # 1 : 1000 (maybe..?..)
-    if (n_steps + 1) % 500 == 0:
+    if (n_steps + 1) % 1000 == 0:
         x, y = ts2xy(load_results(log_directory), 'timesteps')
         if len(x) > 0:
             mean_reward = numpy.mean(y[-100:])

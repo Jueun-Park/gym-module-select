@@ -10,6 +10,7 @@ def init_parse_argument():
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--module', help='module num', type=int, default=0)
     parser.add_argument('-e', '--num-exp', help='num experiment episode', type=int, default=10)
+    parser.add_argument('-d', '--delay', help='time delay (sec)', type=float, default=0)
     args = parser.parse_args()
     return args
 
@@ -28,6 +29,7 @@ env = gym.make('ModuleSelect-v1',
                 save_log_flag=True,
                 log_num=args.module,
                 use_full_daynight_model=full_flag,
+                delay=args.delay,
                 )
 
 env = DummyVecEnv([lambda: env])

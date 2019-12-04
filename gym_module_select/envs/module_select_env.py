@@ -22,10 +22,11 @@ class ModuleSelectEnv(gym.Env):
     metadata = {'render.modes': ['human']}
     continuous = False
 
-    def __init__(self, verbose=0, save_log_flag=False, log_num=None, use_full_daynight_model=False):
+    def __init__(self, verbose=0, save_log_flag=False, log_num=None, use_full_daynight_model=False, delay=0):
         super(ModuleSelectEnv, self).__init__()
         self.verbose = verbose
         self.save_log_flag = save_log_flag
+        self.delay = delay
         if self.save_log_flag and log_num is not None:
             self._init_log_to_write(log_num)
         self.use_full_daynight_model = use_full_daynight_model
@@ -79,6 +80,7 @@ class ModuleSelectEnv(gym.Env):
         elif self.use_full_daynight_model:
             self.inner_env.envs[0].set_vae(self.full_vae)
         for _ in range(CONTROLS_PER_ACTION):
+            time.sleep(self.delay)
             start_time = time.time()
             if action == 0:
                 self.num_use[0] += 1
@@ -142,7 +144,7 @@ class ModuleSelectEnv(gym.Env):
         root_dir = os.path.abspath(os.path.join(root_dir, ".."))
         file_name = root_dir + "/result/" + directory_names[simulate_num] + "/"
         os.makedirs(file_name, exist_ok=True)
-        file_name += directory_names[simulate_num] + timestr + ".csv"
+        file_name += str(self.delay) + "_s_delay+" + directory_names[simulate_num] + timestr + ".csv"
         print(">>> save csv log file: ", file_name)
         self.csv_file = open(file_name, "w", newline="")
         self.csv_writer = csv.writer(self.csv_file)

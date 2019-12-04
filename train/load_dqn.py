@@ -14,6 +14,7 @@ def init_parse_argument():
     parser.add_argument('-m', '--model', help='model to load', type=str)
     parser.add_argument('-e', '--num-exp', help='num experiment episode', type=int, default=10)
     parser.add_argument('-l', '--log', help='off logging (default is on)', action='store_false', default=True)
+    parser.add_argument('-c', '--change-sub', help='change subpolicy (default is off)', action='store_true', default=False)
     args = parser.parse_args()
     return args
 
@@ -30,6 +31,7 @@ log_file.write(timestr + args.model + "\n")
 env = gym.make('ModuleSelect-v1',
                 save_log_flag=args.log,
                 log_num=4,
+                change_subpolicy=args.change_sub,
                 )
 env = DummyVecEnv([lambda: env])
 model = DQN.load(model_name)

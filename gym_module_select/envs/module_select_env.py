@@ -22,10 +22,11 @@ class ModuleSelectEnv(gym.Env):
     metadata = {'render.modes': ['human']}
     continuous = False
 
-    def __init__(self, verbose=0, save_log_flag=False, log_num=None, use_full_daynight_model=False):
+    def __init__(self, verbose=0, save_log_flag=False, log_num=None, use_full_daynight_model=False, change_subpolicy=False):
         super(ModuleSelectEnv, self).__init__()
         self.verbose = verbose
         self.save_log_flag = save_log_flag
+        self.change_subpolicy = change_subpolicy
         if self.save_log_flag and log_num is not None:
             self._init_log_to_write(log_num)
         self.use_full_daynight_model = use_full_daynight_model
@@ -48,13 +49,19 @@ class ModuleSelectEnv(gym.Env):
         else:
             day_vae_path = "modules/logs/vae-level-0-dim-32.pkl"
             self.day_vae = load_vae(day_vae_path)
-            night_vae_path = "modules/logs_n/vae-32_best.pkl"
-            self.night_vae = load_vae(night_vae_path)
-
             day_model_path = "modules/logs/sac/DonkeyVae-v0-level-0_6/DonkeyVae-v0-level-0.pkl"
             self.day_module = ALGOS["sac"].load(day_model_path)
-            night_model_path = "modules/logs_n/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best.pkl"
-            self.night_module = ALGOS["sac"].load(night_model_path)        
+
+            if self.change_subpolicy:  # use sunset model
+                night_vae_path = "modules/logs_sunset/vae-32_best.pkl"
+                self.night_vae = load_vae(night_vae_path)
+                night_model_path = "modules/logs_sunset/sac/DonkeyVae-v0-level-0_2/DonkeyVae-v0-level-0_best.pkl"
+                self.night_module = ALGOS["sac"].load(night_model_path)        
+            else:
+                night_vae_path = "modules/logs_n/vae-32_best.pkl"
+                self.night_vae = load_vae(night_vae_path)
+                night_model_path = "modules/logs_n/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best.pkl"
+                self.night_module = ALGOS["sac"].load(night_model_path)        
 
         self.num_modules = 2
 
@@ -142,7 +149,7 @@ class ModuleSelectEnv(gym.Env):
         root_dir = os.path.abspath(os.path.join(root_dir, ".."))
         file_name = root_dir + "/result/" + directory_names[simulate_num] + "/"
         os.makedirs(file_name, exist_ok=True)
-        file_name += directory_names[simulate_num] + timestr + ".csv"
+        file_name += "change_" + str(self.change_subpolicy) + "+" + directory_names[simulate_num] + timestr + ".csv"
         print(">>> save csv log file: ", file_name)
         self.csv_file = open(file_name, "w", newline="")
         self.csv_writer = csv.writer(self.csv_file)

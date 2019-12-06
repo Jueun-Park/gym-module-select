@@ -74,7 +74,7 @@ if __name__ == "__main__":
         env=env,
         policy=MlpPolicy,
         verbose=1,
-        tensorboard_log="./dncf_dqn_tensorboard/",
+        tensorboard_log="./1206_exp_daynight_dqn_tensorboard/",
         batch_size=32,
         prioritized_replay=True,
         learning_rate=args.learning_rate,

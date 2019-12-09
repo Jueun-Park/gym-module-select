@@ -15,8 +15,7 @@ from stable_baselines import DQN
 
 def init_parse_argument():
     parser = argparse.ArgumentParser()
-    timestr = time.strftime("%H%M%S")
-    parser.add_argument('-i', '--id', help='nickname of the train', type=str, default=timestr)
+    parser.add_argument('-i', '--id', help='nickname of the train', type=str, default="")
     parser.add_argument('-l', '--learning-rate', help='learning rate', type=float, default=2e-4)
     parser.add_argument('-t', '--timesteps', help='timesteps', type=int, default=100000001)
     args = parser.parse_args()
@@ -27,8 +26,9 @@ best_mean_reward = -numpy.inf
 n_steps = 0
 args = init_parse_argument()
 datestr = time.strftime("%Y%m%d")
-log_directory = os.path.dirname(os.path.realpath(__file__)) + "/dncf-dqn-log-" + args.id + "-" +  datestr + "/"
-model_directory = os.path.dirname(os.path.realpath(__file__)) + "/dncf-dqn-models-" + args.id + "-" + datestr + "/"
+timestr = time.strftime("%H%M%S")
+log_directory = os.path.dirname(os.path.realpath(__file__)) + "/dncf-dqn-log-" + args.id + "-" + timestr + "-" + datestr + "/"
+model_directory = os.path.dirname(os.path.realpath(__file__)) + "/dncf-dqn-models-" + args.id + "-" + timestr + "-" + datestr + "/"
 
 TIMESTEPS = args.timesteps
 

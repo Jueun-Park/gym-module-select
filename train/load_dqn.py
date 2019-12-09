@@ -29,7 +29,7 @@ log_file.write(timestr + args.model + "\n")
 
 env = gym.make('ModuleSelect-v1',
                 save_log_flag=args.log,
-                log_num=4,
+                log_num=5,
                 )
 env = DummyVecEnv([lambda: env])
 model = DQN.load(model_name)

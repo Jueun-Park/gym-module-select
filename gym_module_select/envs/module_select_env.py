@@ -50,20 +50,20 @@ class ModuleSelectEnv(gym.Env):
         else:
             dc_vae_path = "modules/logs_dc/vae-32.pkl"
             self.dc_vae = load_vae(dc_vae_path)
-            df_vae_path = "modules/logs_df/vae-32.pkl"
+            df_vae_path = "modules/logs_df01/vae-32.pkl"
             self.df_vae = load_vae(df_vae_path)
             nc_vae_path = "modules/logs_nc/vae-32.pkl"
             self.nc_vae = load_vae(nc_vae_path)
-            nf_vae_path = "modules/logs_nf/vae-32.pkl"
+            nf_vae_path = "modules/logs_nf01/vae-32.pkl"
             self.nf_vae = load_vae(nf_vae_path)
 
             dc_module_path = "modules/logs_dc/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best_63374.zip"  # ? 55-99%
             self.dc_module = ALGOS["sac"].load(dc_module_path)
-            df_module_path = "modules/logs_df/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best_63762.zip"  # ? 15-16%
+            df_module_path = "modules/logs_df01/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best_62409.zip"  # ? 15-16%
             self.df_module = ALGOS["sac"].load(df_module_path)
             nc_module_path = "modules/logs_nc/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best_61638.zip"  # ? 30-97%
             self.nc_module = ALGOS["sac"].load(nc_module_path)
-            nf_module_path = "modules/logs_nf/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best_62744.zip"  # ? 31-61%
+            nf_module_path = "modules/logs_nf01/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best_62461.zip"  # ? 31-61%
             self.nf_module = ALGOS["sac"].load(nf_module_path)
 
         self.num_modules = 4

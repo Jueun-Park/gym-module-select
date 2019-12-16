@@ -27,8 +27,8 @@ n_steps = 0
 args = init_parse_argument()
 datestr = time.strftime("%Y%m%d")
 timestr = time.strftime("%H%M%S")
-log_directory = os.path.dirname(os.path.realpath(__file__)) + "/dncf-dqn-log-" + args.id + "-" + timestr + "-" + datestr + "/"
-model_directory = os.path.dirname(os.path.realpath(__file__)) + "/dncf-dqn-models-" + args.id + "-" + timestr + "-" + datestr + "/"
+log_directory = os.path.dirname(os.path.realpath(__file__)) + "/" + datestr + "-dncf-dqn-log-" + args.id + "-" + timestr + "-" + "/"
+model_directory = os.path.dirname(os.path.realpath(__file__)) + "/" + datestr + "-dncf-dqn-models-" + args.id + "-" + timestr + "-" + "/"
 
 TIMESTEPS = args.timesteps
 

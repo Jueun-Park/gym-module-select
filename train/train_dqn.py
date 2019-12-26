@@ -8,6 +8,7 @@ import time
 import gym_module_select
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines.deepq.policies import MlpPolicy
+from stable_baselines.deepq.policies import LnMlpPolicy
 from stable_baselines.bench import Monitor
 from stable_baselines.results_plotter import load_results, ts2xy
 from stable_baselines import DQN
@@ -72,7 +73,7 @@ if __name__ == "__main__":
     env = DummyVecEnv([lambda: env])
     model = DQN(
         env=env,
-        policy=MlpPolicy,
+        policy=LnMlpPolicy,
         verbose=1,
         tensorboard_log="./" + args.id + "_dcnf_dqn_tensorboard/",
         batch_size=32,

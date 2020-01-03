@@ -75,7 +75,7 @@ class ModuleSelectEnv(gym.Env):
 
         self.observation_space = spaces.Box(low=np.finfo(np.float32).min,
                                             high=np.finfo(np.float32).max,
-                                            shape=(1, 32, ),
+                                            shape=(32, ),
                                             dtype=np.float32)
 
     def step(self, action):

@@ -72,6 +72,7 @@ if __name__ == "__main__":
         verbose=1,
         tensorboard_log="./" + args.id + "_dcnf_acer_tensorboard/",
         learning_rate=args.learning_rate,
+        buffer_size=10000,  # test
     )
     print("Learning Rate:", args.learning_rate)
     try:

@@ -107,7 +107,7 @@ class ModuleSelectEnv(gym.Env):
                 self.num_use[2] += 1
                 inner_action = self.nc_module.predict(self.inner_obs, deterministic=True)
             elif action == 3:
-                self.num_use[1] += 1
+                self.num_use[3] += 1
                 inner_action = self.nf_module.predict(self.inner_obs, deterministic=True)
             elif self.use_full_daynight_model:
                 # TODO: full model

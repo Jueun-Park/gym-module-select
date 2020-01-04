@@ -16,6 +16,7 @@ directory_names = {0: "0+day-clear",
                    3: "3+night-fog",
                    4: "random-agent+",
                    5: "dqn-agent+",
+                   6: "acer-agent+",
                    }
 
 

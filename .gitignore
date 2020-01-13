@@ -5,6 +5,7 @@ load_log.txt
 logs_n/
 train/old/
 modules/logs*/
+train/*-/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

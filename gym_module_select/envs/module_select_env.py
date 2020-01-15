@@ -6,6 +6,7 @@ import time
 from collections import deque
 
 from utils.utils import create_test_env, get_saved_hyperparams, ALGOS, load_vae
+from modules.vae.controller import VAEController 
 
 CONTROLS_PER_ACTION = 1
 
@@ -74,9 +75,12 @@ class ModuleSelectEnv(gym.Env):
         else:
             self.action_space = spaces.Discrete(self.num_modules)
 
+        self.all_vae = VAEController()
+        self.all_vae.load("modules/logs_dncf/vae-32.pkl")
+
         self.observation_space = spaces.Box(low=np.finfo(np.float32).min,
                                             high=np.finfo(np.float32).max,
-                                            shape=(32, ),
+                                            shape=(self.all_vae.z_size, ),
                                             dtype=np.float32)
 
     def step(self, action):
@@ -127,7 +131,7 @@ class ModuleSelectEnv(gym.Env):
                                              self.driving_score_percent))
         if done:
             reward_sum += self.driving_score_percent
-        return infos[0]['encoded_obs'], reward_sum, done, infos[0]
+        return self.all_vae.encode(infos[0]['raw_image']), reward_sum, done, infos[0]
 
     def reset(self):
         self.inner_obs = self.inner_env.reset()
@@ -148,7 +152,7 @@ class ModuleSelectEnv(gym.Env):
             self.inner_env.envs[0].set_vae(self.full_vae)
         else:
             self.inner_env.envs[0].set_vae(self.dc_vae)
-        return infos['encoded_obs']
+        return self.all_vae.encode(infos['raw_image'])
 
     def render(self, mode='human', close=False):
         result = self.inner_env.render(mode=mode)

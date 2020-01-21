@@ -10,7 +10,7 @@ from modules.vae.controller import VAEController
 
 CONTROLS_PER_ACTION = 1
 
-LOG_DIR = "/result_dncf/"
+LOG_DIR = "/result_dncf_allvae/"
 directory_names = {0: "0+day-clear",
                    1: "1+day-fog",
                    2: "2+night-clear",

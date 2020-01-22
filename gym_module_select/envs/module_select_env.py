@@ -8,9 +8,8 @@ from collections import deque
 from utils.utils import create_test_env, get_saved_hyperparams, ALGOS, load_vae
 from modules.vae.controller import VAEController 
 
-CONTROLS_PER_ACTION = 1
 
-LOG_DIR = "/result_dncf_allvae/"
+LOG_DIR = "/result_dncf_allvae_stacked/"
 directory_names = {0: "0+day-clear",
                    1: "1+day-fog",
                    2: "2+night-clear",
@@ -25,48 +24,31 @@ class ModuleSelectEnv(gym.Env):
     metadata = {'render.modes': ['human']}
     continuous = False
 
-    def __init__(self, verbose=0, save_log_flag=False, log_num=None, use_full_daynight_model=False):
+    def __init__(self, verbose=0, save_log_flag=False, log_num=None, controls_per_action=10):
         super(ModuleSelectEnv, self).__init__()
         self.verbose = verbose
         self.save_log_flag = save_log_flag
         if self.save_log_flag and log_num is not None:
             self._init_log_to_write(log_num)
-        self.use_full_daynight_model = use_full_daynight_model
+        self.controls_per_action = controls_per_action
 
-        stats_path = "modules/logs_dc/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0"
+        stats_path = "modules/logs_dc_allvae32/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0"
         hyperparams, stats_path = get_saved_hyperparams(stats_path,
                                                     norm_reward=False)
-        hyperparams['vae_path'] = "modules/logs_dc/vae-32.pkl"
+        hyperparams['vae_path'] = "modules/logs_dncf/vae-32.pkl"
         self.inner_env = create_test_env(stats_path=stats_path,
                                         seed=0,
-                                        log_dir="modules/logs_dc",
+                                        log_dir="modules/logs_dncf",
                                         hyperparams=hyperparams)
 
-        if self.use_full_daynight_model:
-            # TODO: not yet in dncf
-            # the model trained in discrete light changing env
-            full_vae_path = "modules/logs_daynight_full/vae-32.pkl"
-            self.full_vae = load_vae(full_vae_path)
-            full_model_path = "modules/logs_daynight_full/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best.pkl"
-            self.full_model = ALGOS["sac"].load(full_model_path)
-        else:
-            dc_vae_path = "modules/logs_dc/vae-32.pkl"
-            self.dc_vae = load_vae(dc_vae_path)
-            df_vae_path = "modules/logs_df01/vae-32.pkl"
-            self.df_vae = load_vae(df_vae_path)
-            nc_vae_path = "modules/logs_nc/vae-32.pkl"
-            self.nc_vae = load_vae(nc_vae_path)
-            nf_vae_path = "modules/logs_nf01/vae-32.pkl"
-            self.nf_vae = load_vae(nf_vae_path)
-
-            dc_module_path = "modules/logs_dc/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best_63374.zip"  # ? 55-99%
-            self.dc_module = ALGOS["sac"].load(dc_module_path)
-            df_module_path = "modules/logs_df01/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best_62409.zip"  # ? 15-16%
-            self.df_module = ALGOS["sac"].load(df_module_path)
-            nc_module_path = "modules/logs_nc/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best_61638.zip"  # ? 30-97%
-            self.nc_module = ALGOS["sac"].load(nc_module_path)
-            nf_module_path = "modules/logs_nf01/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0_best_62461.zip"  # ? 31-61%
-            self.nf_module = ALGOS["sac"].load(nf_module_path)
+        dc_module_path = "modules/logs_dc_allvae32/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0.zip"
+        self.dc_module = ALGOS["sac"].load(dc_module_path)
+        df_module_path = "modules/logs_df_allvae32/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0.zip"
+        self.df_module = ALGOS["sac"].load(df_module_path)
+        nc_module_path = "modules/logs_nc_allvae32/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0.zip"
+        self.nc_module = ALGOS["sac"].load(nc_module_path)
+        nf_module_path = "modules/logs_nf_allvae32/sac/DonkeyVae-v0-level-0_1/DonkeyVae-v0-level-0.zip"
+        self.nf_module = ALGOS["sac"].load(nf_module_path)
 
         self.num_modules = 4
 
@@ -75,31 +57,20 @@ class ModuleSelectEnv(gym.Env):
         else:
             self.action_space = spaces.Discrete(self.num_modules)
 
-        self.all_vae = VAEController()
-        self.all_vae.load("modules/logs_dncf/vae-32.pkl")
-
+        self.n_stacks = 4
+        self.latent_size = self.inner_env.envs[0].vae.z_size
         self.observation_space = spaces.Box(low=np.finfo(np.float32).min,
                                             high=np.finfo(np.float32).max,
-                                            shape=(self.all_vae.z_size, ),
+                                            shape=(self.latent_size * self.n_stacks, ),
                                             dtype=np.float32)
+        self.obs = np.zeros((self.observation_space.shape))
 
     def step(self, action):
         if self.continuous:
             action = np.argmax(action)
         reward_sum = 0
 
-        if action == 0:
-            self.inner_env.envs[0].set_vae(self.dc_vae)
-        elif action == 1:
-            self.inner_env.envs[0].set_vae(self.df_vae)
-        elif action == 2:
-            self.inner_env.envs[0].set_vae(self.nc_vae)
-        elif action == 3:
-            self.inner_env.envs[0].set_vae(self.nf_vae)
-        elif self.use_full_daynight_model:
-            self.inner_env.envs[0].set_vae(self.full_vae)
-
-        for _ in range(CONTROLS_PER_ACTION):
+        for _ in range(self.controls_per_action):
             start_time = time.time()
             if action == 0:
                 self.num_use[0] += 1
@@ -113,9 +84,6 @@ class ModuleSelectEnv(gym.Env):
             elif action == 3:
                 self.num_use[3] += 1
                 inner_action = self.nf_module.predict(self.inner_obs, deterministic=True)
-            elif self.use_full_daynight_model:
-                # TODO: full model
-                pass
             else:
                 print("action error")
             if isinstance(self.inner_env.envs[0].env.action_space, gym.spaces.Box):
@@ -131,7 +99,12 @@ class ModuleSelectEnv(gym.Env):
                                              self.driving_score_percent))
         if done:
             reward_sum += self.driving_score_percent
-        return self.all_vae.encode(infos[0]['raw_image']), reward_sum, done, infos[0]
+        infos[0]['encoded_obs']
+        return self.obs, reward_sum, done, infos[0]
+
+    def stack_obs(self, new_obs):
+        self.obs[self.latent_size:] = self.obs[:self.latent_size * (self.n_stacks - 1)]
+        self.obs[:self.latent_size] = new_obs
 
     def reset(self):
         self.inner_obs = self.inner_env.reset()
@@ -148,11 +121,8 @@ class ModuleSelectEnv(gym.Env):
         self.previous_action = None
 
         self._, _, _, infos = self.inner_env.envs[0].env.observe()
-        if self.use_full_daynight_model:
-            self.inner_env.envs[0].set_vae(self.full_vae)
-        else:
-            self.inner_env.envs[0].set_vae(self.dc_vae)
-        return self.all_vae.encode(infos['raw_image'])
+        self.stack_obs(infos['encoded_obs'])
+        return self.obs
 
     def render(self, mode='human', close=False):
         result = self.inner_env.render(mode=mode)

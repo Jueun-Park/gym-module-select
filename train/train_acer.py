@@ -18,6 +18,7 @@ def init_parse_argument():
     parser.add_argument('-i', '--id', help='nickname of the train', type=str, default="")
     parser.add_argument('-l', '--learning-rate', help='learning rate', type=float, default=7e-4)
     parser.add_argument('-t', '--timesteps', help='timesteps', type=int, default=100000001)
+    parser.add_argument('-c', '--cpa', help='controls per action', type=int, default=1)
     args = parser.parse_args()
     return args
 
@@ -27,8 +28,8 @@ n_steps = 0
 args = init_parse_argument()
 datestr = time.strftime("%Y%m%d")
 timestr = time.strftime("%H%M%S")
-log_directory = os.path.dirname(os.path.realpath(__file__)) + "/" + datestr + "-dncf-acer-log-" + args.id + "-" + timestr + "-" + "/"
-model_directory = os.path.dirname(os.path.realpath(__file__)) + "/" + datestr + "-dncf-acer-models-" + args.id + "-" + timestr + "-" + "/"
+log_directory = os.path.dirname(os.path.realpath(__file__)) + "/" + datestr + "-dncf-allvae-stacked-acer-log-" + args.id + "-" + timestr + "-" + "/"
+model_directory = os.path.dirname(os.path.realpath(__file__)) + "/" + datestr + "-dncf-allvae-stacked-acer-models-" + args.id + "-" + timestr + "-" + "/"
 
 TIMESTEPS = args.timesteps
 
@@ -63,6 +64,7 @@ if __name__ == "__main__":
 
     env = gym.make('ModuleSelect-v1',
                     verbose=0,
+                    controls_per_action=args.cpa,
                     )
     env = Monitor(env, log_directory, allow_early_resets=True)
     env = DummyVecEnv([lambda: env])
@@ -70,7 +72,7 @@ if __name__ == "__main__":
         env=env,
         policy=MlpPolicy,
         verbose=1,
-        tensorboard_log="./" + args.id + "_dcnf_acer_tensorboard/",
+        tensorboard_log="./" + args.id + "_dcnf_allvae_stacked_acer_tensorboard/",
         learning_rate=args.learning_rate,
         buffer_size=20000,  # test
     )

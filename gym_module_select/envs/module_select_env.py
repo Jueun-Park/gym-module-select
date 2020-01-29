@@ -99,7 +99,7 @@ class ModuleSelectEnv(gym.Env):
                                              self.driving_score_percent))
         if done:
             reward_sum += self.driving_score_percent
-        infos[0]['encoded_obs']
+        self.stack_obs(infos[0]['encoded_obs'])
         return self.obs, reward_sum, done, infos[0]
 
     def stack_obs(self, new_obs):
